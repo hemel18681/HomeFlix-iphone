@@ -1,0 +1,131 @@
+import SwiftUI
+
+public struct SearchModalView: View {
+    @ObservedObject var catalogStore = CatalogStore.shared
+    let onClose: () -> Void
+    let onSelectItem: (MediaItem) -> Void
+    
+    @State private var searchText: String = ""
+    @State private var selectedFilter: String = "All"
+    @State private var searchResults: [MediaItem] = []
+    
+    public init(onClose: @escaping () -> Void, onSelectItem: @escaping (MediaItem) -> Void) {
+        self.onClose = onClose
+        self.onSelectItem = onSelectItem
+    }
+    
+    private let filterOptions = ["All", "Movies", "TV Series", "Anime", "1080p"]
+    private let columns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
+    ]
+    
+    private func executeSearch() {
+        let typeFilter = selectedFilter == "Movies" ? "movie" : (selectedFilter == "TV Series" ? "series" : nil)
+        let categoryFilter = selectedFilter == "Anime" ? "Anime" : nil
+        let qualityFilter = selectedFilter == "1080p" ? "1080p" : nil
+        
+        searchResults = catalogStore.search(
+            query: searchText,
+            typeFilter: typeFilter,
+            categoryFilter: categoryFilter,
+            qualityFilter: qualityFilter
+        )
+    }
+    
+    public var body: some View {
+        VStack(spacing: 0) {
+            // Search Input Header
+            HStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 15))
+                        .foregroundColor(NetflixTheme.textMuted)
+                    
+                    TextField("Search movies, shows, anime...", text: $searchText)
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .autocorrectionDisabled()
+                        .onChange(of: searchText) { _ in
+                            executeSearch()
+                        }
+                    
+                    if !searchText.isEmpty {
+                        Button(action: {
+                            searchText = ""
+                            executeSearch()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(NetflixTheme.textMuted)
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(hex: "262626"))
+                .cornerRadius(6)
+                
+                Button("Cancel", action: onClose)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            // Filter Pills
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(filterOptions, id: \.self) { opt in
+                        Button(action: {
+                            selectedFilter = opt
+                            executeSearch()
+                        }) {
+                            Text(opt)
+                                .font(.system(size: 12, weight: selectedFilter == opt ? .bold : .medium))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedFilter == opt ? NetflixTheme.brandRed : Color(hex: "222222"))
+                                .cornerRadius(14)
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
+            }
+            
+            // Search Results Grid
+            ScrollView(.vertical, showsIndicators: false) {
+                if searchResults.isEmpty && !searchText.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "film")
+                            .font(.system(size: 40))
+                            .foregroundColor(NetflixTheme.textMuted)
+                            .padding(.top, 40)
+                        Text("No matching titles found")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(NetflixTheme.textSecondary)
+                    }
+                } else {
+                    LazyVGrid(columns: columns, spacing: 10) {
+                        ForEach(searchResults) { item in
+                            MediaCardView(
+                                item: item,
+                                width: 108,
+                                isLandscape: false,
+                                onSelect: onSelectItem
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
+            }
+        }
+        .background(NetflixTheme.background)
+        .onAppear {
+            executeSearch()
+        }
+    }
+}

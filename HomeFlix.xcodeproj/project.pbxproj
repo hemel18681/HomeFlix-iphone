@@ -1,0 +1,462 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		HF00000000003EA /* HomeFlixApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003E9 /* HomeFlixApp.swift */; };
+		HF00000000003EC /* CategoryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003EB /* CategoryRow.swift */; };
+		HF00000000003EE /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003ED /* MediaItem.swift */; };
+		HF00000000003F0 /* SeasonEpisode.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003EF /* SeasonEpisode.swift */; };
+		HF00000000003F2 /* TastePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003F1 /* TastePreference.swift */; };
+		HF00000000003F4 /* WatchProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003F3 /* WatchProgress.swift */; };
+		HF00000000003F6 /* CatalogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003F5 /* CatalogStore.swift */; };
+		HF00000000003F8 /* DedicatedPlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003F7 /* DedicatedPlayerManager.swift */; };
+		HF00000000003FA /* WatchlistStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003F9 /* WatchlistStore.swift */; };
+		HF00000000003FC /* NetflixTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003FB /* NetflixTheme.swift */; };
+		HF00000000003FE /* AsyncImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003FD /* AsyncImageView.swift */; };
+		HF0000000000400 /* ShimmerLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF00000000003FF /* ShimmerLoadingView.swift */; };
+		HF0000000000402 /* DetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000401 /* DetailSheetView.swift */; };
+		HF0000000000404 /* EpisodeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000403 /* EpisodeListView.swift */; };
+		HF0000000000406 /* MoreLikeThisGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000405 /* MoreLikeThisGridView.swift */; };
+		HF0000000000408 /* BillboardHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000407 /* BillboardHeroView.swift */; };
+		HF000000000040A /* ContentRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000409 /* ContentRowView.swift */; };
+		HF000000000040C /* HomeFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF000000000040B /* HomeFeedView.swift */; };
+		HF000000000040E /* MediaCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF000000000040D /* MediaCardView.swift */; };
+		HF0000000000410 /* Top10RankBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF000000000040F /* Top10RankBadge.swift */; };
+		HF0000000000412 /* NetflixNavbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000411 /* NetflixNavbarView.swift */; };
+		HF0000000000414 /* AudioSubtitleMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000413 /* AudioSubtitleMenu.swift */; };
+		HF0000000000416 /* DedicatedPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000415 /* DedicatedPlayerView.swift */; };
+		HF0000000000418 /* NetflixPlayerControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000417 /* NetflixPlayerControls.swift */; };
+		HF000000000041A /* TastePreferencesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000419 /* TastePreferencesSheet.swift */; };
+		HF000000000041C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF000000000041B /* ContentView.swift */; };
+		HF000000000041E /* SearchModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF000000000041D /* SearchModalView.swift */; };
+		HF0000000000420 /* curated-rows.json in Resources */ = {isa = PBXBuildFile; fileRef = HF000000000041F /* curated-rows.json */; };
+		HF0000000000422 /* featured.json in Resources */ = {isa = PBXBuildFile; fileRef = HF0000000000421 /* featured.json */; };
+		HF0000000000424 /* search-index.json in Resources */ = {isa = PBXBuildFile; fileRef = HF0000000000423 /* search-index.json */; };
+		HF0000000000426 /* series-episodes.json in Resources */ = {isa = PBXBuildFile; fileRef = HF0000000000425 /* series-episodes.json */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		HF0000000000428 /* HomeFlix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HomeFlix.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		HF0000000000427 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		HF00000000003E9 /* HomeFlixApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeFlixApp.swift"; sourceTree = "<group>"; };
+		HF00000000003EB /* CategoryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CategoryRow.swift"; sourceTree = "<group>"; };
+		HF00000000003ED /* MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaItem.swift"; sourceTree = "<group>"; };
+		HF00000000003EF /* SeasonEpisode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SeasonEpisode.swift"; sourceTree = "<group>"; };
+		HF00000000003F1 /* TastePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TastePreference.swift"; sourceTree = "<group>"; };
+		HF00000000003F3 /* WatchProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WatchProgress.swift"; sourceTree = "<group>"; };
+		HF00000000003F5 /* CatalogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CatalogStore.swift"; sourceTree = "<group>"; };
+		HF00000000003F7 /* DedicatedPlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DedicatedPlayerManager.swift"; sourceTree = "<group>"; };
+		HF00000000003F9 /* WatchlistStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WatchlistStore.swift"; sourceTree = "<group>"; };
+		HF00000000003FB /* NetflixTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetflixTheme.swift"; sourceTree = "<group>"; };
+		HF00000000003FD /* AsyncImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsyncImageView.swift"; sourceTree = "<group>"; };
+		HF00000000003FF /* ShimmerLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShimmerLoadingView.swift"; sourceTree = "<group>"; };
+		HF0000000000401 /* DetailSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DetailSheetView.swift"; sourceTree = "<group>"; };
+		HF0000000000403 /* EpisodeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EpisodeListView.swift"; sourceTree = "<group>"; };
+		HF0000000000405 /* MoreLikeThisGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoreLikeThisGridView.swift"; sourceTree = "<group>"; };
+		HF0000000000407 /* BillboardHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BillboardHeroView.swift"; sourceTree = "<group>"; };
+		HF0000000000409 /* ContentRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentRowView.swift"; sourceTree = "<group>"; };
+		HF000000000040B /* HomeFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeFeedView.swift"; sourceTree = "<group>"; };
+		HF000000000040D /* MediaCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaCardView.swift"; sourceTree = "<group>"; };
+		HF000000000040F /* Top10RankBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Top10RankBadge.swift"; sourceTree = "<group>"; };
+		HF0000000000411 /* NetflixNavbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetflixNavbarView.swift"; sourceTree = "<group>"; };
+		HF0000000000413 /* AudioSubtitleMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudioSubtitleMenu.swift"; sourceTree = "<group>"; };
+		HF0000000000415 /* DedicatedPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DedicatedPlayerView.swift"; sourceTree = "<group>"; };
+		HF0000000000417 /* NetflixPlayerControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetflixPlayerControls.swift"; sourceTree = "<group>"; };
+		HF0000000000419 /* TastePreferencesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TastePreferencesSheet.swift"; sourceTree = "<group>"; };
+		HF000000000041B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+		HF000000000041D /* SearchModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SearchModalView.swift"; sourceTree = "<group>"; };
+		HF000000000041F /* curated-rows.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "curated-rows.json"; sourceTree = "<group>"; };
+		HF0000000000421 /* featured.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "featured.json"; sourceTree = "<group>"; };
+		HF0000000000423 /* search-index.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "search-index.json"; sourceTree = "<group>"; };
+		HF0000000000425 /* series-episodes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "series-episodes.json"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		HF000000000042E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		HF000000000042B = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000437 /* Sources */,
+				HF0000000000427 /* Info.plist */,
+				HF000000000042D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		HF000000000042D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000428 /* HomeFlix.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		HF0000000000438 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				HF00000000003EB /* CategoryRow.swift */,
+				HF00000000003ED /* MediaItem.swift */,
+				HF00000000003EF /* SeasonEpisode.swift */,
+				HF00000000003F1 /* TastePreference.swift */,
+				HF00000000003F3 /* WatchProgress.swift */,
+			);
+			name = "Models";
+			path = "Models"; sourceTree = "<group>";
+		};
+		HF0000000000439 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				HF00000000003F5 /* CatalogStore.swift */,
+				HF00000000003F7 /* DedicatedPlayerManager.swift */,
+				HF00000000003F9 /* WatchlistStore.swift */,
+			);
+			name = "Services";
+			path = "Services"; sourceTree = "<group>";
+		};
+		HF000000000043A /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				HF00000000003FB /* NetflixTheme.swift */,
+			);
+			name = "Theme";
+			path = "Theme"; sourceTree = "<group>";
+		};
+		HF000000000043C /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				HF00000000003FD /* AsyncImageView.swift */,
+				HF00000000003FF /* ShimmerLoadingView.swift */,
+			);
+			name = "Components";
+			path = "Components"; sourceTree = "<group>";
+		};
+		HF000000000043D /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000401 /* DetailSheetView.swift */,
+				HF0000000000403 /* EpisodeListView.swift */,
+				HF0000000000405 /* MoreLikeThisGridView.swift */,
+			);
+			name = "Detail";
+			path = "Detail"; sourceTree = "<group>";
+		};
+		HF000000000043E /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000407 /* BillboardHeroView.swift */,
+				HF0000000000409 /* ContentRowView.swift */,
+				HF000000000040B /* HomeFeedView.swift */,
+				HF000000000040D /* MediaCardView.swift */,
+				HF000000000040F /* Top10RankBadge.swift */,
+			);
+			name = "Home";
+			path = "Home"; sourceTree = "<group>";
+		};
+		HF000000000043F /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000411 /* NetflixNavbarView.swift */,
+			);
+			name = "Navigation";
+			path = "Navigation"; sourceTree = "<group>";
+		};
+		HF0000000000440 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000413 /* AudioSubtitleMenu.swift */,
+				HF0000000000415 /* DedicatedPlayerView.swift */,
+				HF0000000000417 /* NetflixPlayerControls.swift */,
+			);
+			name = "Player";
+			path = "Player"; sourceTree = "<group>";
+		};
+		HF0000000000441 /* Preferences */ = {
+			isa = PBXGroup;
+			children = (
+				HF0000000000419 /* TastePreferencesSheet.swift */,
+			);
+			name = "Preferences";
+			path = "Preferences"; sourceTree = "<group>";
+		};
+		HF0000000000442 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				HF000000000041B /* ContentView.swift */,
+			);
+			name = "Root";
+			path = "Root"; sourceTree = "<group>";
+		};
+		HF0000000000443 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				HF000000000041D /* SearchModalView.swift */,
+			);
+			name = "Search";
+			path = "Search"; sourceTree = "<group>";
+		};
+		HF000000000043B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				HF000000000043C /* Components */,
+				HF000000000043D /* Detail */,
+				HF000000000043E /* Home */,
+				HF000000000043F /* Navigation */,
+				HF0000000000440 /* Player */,
+				HF0000000000441 /* Preferences */,
+				HF0000000000442 /* Root */,
+				HF0000000000443 /* Search */,
+			);
+			name = "Views";
+			path = "Views"; sourceTree = "<group>";
+		};
+		HF0000000000444 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				HF000000000041F /* curated-rows.json */,
+				HF0000000000421 /* featured.json */,
+				HF0000000000423 /* search-index.json */,
+				HF0000000000425 /* series-episodes.json */,
+			);
+			name = "Resources";
+			path = "Resources"; sourceTree = "<group>";
+		};
+		HF0000000000437 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				HF00000000003E9 /* HomeFlixApp.swift */,
+				HF0000000000438 /* Models */,
+				HF0000000000439 /* Services */,
+				HF000000000043A /* Theme */,
+				HF000000000043B /* Views */,
+				HF0000000000444 /* Resources */,
+			);
+			name = "Sources";
+			path = "Sources"; sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		HF0000000000429 /* HomeFlix */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = HF0000000000432 /* Build configuration list for PBXNativeTarget "HomeFlix" */;
+			buildPhases = (
+				HF000000000042F /* Sources */,
+				HF000000000042E /* Frameworks */,
+				HF0000000000430 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HomeFlix;
+			productName = HomeFlix;
+			productReference = HF0000000000428 /* HomeFlix.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		HF000000000042A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					HF0000000000429 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = HF0000000000431 /* Build configuration list for PBXProject "HomeFlix" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = HF000000000042B;
+			productRefGroup = HF000000000042D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				HF0000000000429 /* HomeFlix */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		HF0000000000430 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				HF0000000000420 /* curated-rows.json in Resources */,
+				HF0000000000422 /* featured.json in Resources */,
+				HF0000000000424 /* search-index.json in Resources */,
+				HF0000000000426 /* series-episodes.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		HF000000000042F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				HF00000000003EA /* HomeFlixApp.swift in Sources */,
+				HF00000000003EC /* CategoryRow.swift in Sources */,
+				HF00000000003EE /* MediaItem.swift in Sources */,
+				HF00000000003F0 /* SeasonEpisode.swift in Sources */,
+				HF00000000003F2 /* TastePreference.swift in Sources */,
+				HF00000000003F4 /* WatchProgress.swift in Sources */,
+				HF00000000003F6 /* CatalogStore.swift in Sources */,
+				HF00000000003F8 /* DedicatedPlayerManager.swift in Sources */,
+				HF00000000003FA /* WatchlistStore.swift in Sources */,
+				HF00000000003FC /* NetflixTheme.swift in Sources */,
+				HF00000000003FE /* AsyncImageView.swift in Sources */,
+				HF0000000000400 /* ShimmerLoadingView.swift in Sources */,
+				HF0000000000402 /* DetailSheetView.swift in Sources */,
+				HF0000000000404 /* EpisodeListView.swift in Sources */,
+				HF0000000000406 /* MoreLikeThisGridView.swift in Sources */,
+				HF0000000000408 /* BillboardHeroView.swift in Sources */,
+				HF000000000040A /* ContentRowView.swift in Sources */,
+				HF000000000040C /* HomeFeedView.swift in Sources */,
+				HF000000000040E /* MediaCardView.swift in Sources */,
+				HF0000000000410 /* Top10RankBadge.swift in Sources */,
+				HF0000000000412 /* NetflixNavbarView.swift in Sources */,
+				HF0000000000414 /* AudioSubtitleMenu.swift in Sources */,
+				HF0000000000416 /* DedicatedPlayerView.swift in Sources */,
+				HF0000000000418 /* NetflixPlayerControls.swift in Sources */,
+				HF000000000041A /* TastePreferencesSheet.swift in Sources */,
+				HF000000000041C /* ContentView.swift in Sources */,
+				HF000000000041E /* SearchModalView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		HF0000000000433 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INFOPLIST_FILE = "Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.homeflix.ios";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		HF0000000000434 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				INFOPLIST_FILE = "Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.homeflix.ios";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		HF0000000000435 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.homeflix.ios";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		HF0000000000436 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.homeflix.ios";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		HF0000000000431 /* Build configuration list for PBXProject "HomeFlix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				HF0000000000433 /* Debug */,
+				HF0000000000434 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		HF0000000000432 /* Build configuration list for PBXNativeTarget "HomeFlix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				HF0000000000435 /* Debug */,
+				HF0000000000436 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = HF000000000042A /* Project object */;
+}

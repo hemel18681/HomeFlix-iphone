@@ -1,0 +1,45 @@
+# Xcode
+.DS_Store
+*/.DS_Store
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-builder
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/xcuserdata/
+project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+.sourcekit-lsp/
+
+# Build artifacts and temporary files
+xtool/
+*.tmp
+*.log
+
+# Node.js / Web Reference
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+.cache/
+
+# Large dataset cache files (>100MB exceeds GitHub push limit)
+web-reference/backend/data/items-map.json
