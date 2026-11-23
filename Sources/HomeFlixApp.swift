@@ -8,6 +8,7 @@ public struct HomeFlixApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+                .background(Color(hex: "141414").edgesIgnoringSafeArea(.all))
         }
     }
 }

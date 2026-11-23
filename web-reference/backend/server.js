@@ -16,6 +16,7 @@ console.log('Loading in-memory catalog shards...');
 
 const featured = JSON.parse(fs.readFileSync(path.join(dataDir, 'featured.json'), 'utf8'));
 const searchIndex = JSON.parse(fs.readFileSync(path.join(dataDir, 'search-index.json'), 'utf8'));
+const fullItemMap = JSON.parse(fs.readFileSync(path.join(dataDir, 'items-map.json'), 'utf8'));
 
 // Load category shards
 const categories = {
@@ -34,22 +35,6 @@ const categories = {
   'kolkata-bangla': JSON.parse(fs.readFileSync(path.join(dataDir, 'kolkata-bangla.json'), 'utf8')),
   'foreign-movies': JSON.parse(fs.readFileSync(path.join(dataDir, 'foreign-movies.json'), 'utf8'))
 };
-
-// Load or synthesize full items map
-let fullItemMap = {};
-const itemsMapPath = path.join(dataDir, 'items-map.json');
-if (fs.existsSync(itemsMapPath)) {
-  fullItemMap = JSON.parse(fs.readFileSync(itemsMapPath, 'utf8'));
-} else {
-  console.log('Synthesizing in-memory fullItemMap from category shards...');
-  for (const catList of Object.values(categories)) {
-    if (Array.isArray(catList)) {
-      for (const item of catList) {
-        if (item && item.id) fullItemMap[item.id] = item;
-      }
-    }
-  }
-}
 
 console.log('All shards loaded successfully into memory.');
 

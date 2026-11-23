@@ -24,65 +24,73 @@ public struct ContentView: View {
     public init() {}
     
     public var body: some View {
-        ZStack(alignment: .top) {
-            Color(hex: "141414").edgesIgnoringSafeArea(.all)
-            
-            // 1. Home Feed View
-            HomeFeedView(
-                selectedTab: $selectedTab,
-                onSelectItem: { item in
-                    activeSheet = .detail(item)
-                },
-                onPlayItem: { item in
-                    playerManager.play(item: item)
-                }
-            )
-            
-            // 2. Translucent Floating Navbar
-            NetflixNavbarView(
-                selectedTab: $selectedTab,
-                onSearchTap: {
-                    activeSheet = .search
-                },
-                onPreferencesTap: {
-                    activeSheet = .preferences
-                }
-            )
-        }
-        // Unified Bulletproof Sheet Presentation (Zero collision / Zero bug)
-        .sheet(item: $activeSheet) { sheet in
-            switch sheet {
-            case .detail(let item):
-                DetailSheetView(
-                    item: item,
-                    onClose: {
-                        activeSheet = nil
-                    },
-                    onPlay: { mediaItem, seasonNum, episode in
-                        activeSheet = nil
-                        playerManager.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
-                    }
-                )
-            case .search:
-                SearchModalView(
-                    onClose: {
-                        activeSheet = nil
-                    },
+        NetworkGuardView {
+            ZStack(alignment: .top) {
+                Color(hex: "141414")
+                    .edgesIgnoringSafeArea(.all)
+                
+                // 1. Main Home Feed
+                HomeFeedView(
+                    selectedTab: $selectedTab,
                     onSelectItem: { item in
                         activeSheet = .detail(item)
+                    },
+                    onPlayItem: { item in
+                        playerManager.play(item: item)
                     }
                 )
-            case .preferences:
-                TastePreferencesSheet(
-                    onClose: {
-                        activeSheet = nil
+                
+                // 2. Translucent Floating Navbar
+                NetflixNavbarView(
+                    selectedTab: $selectedTab,
+                    onSearchTap: {
+                        activeSheet = .search
+                    },
+                    onPreferencesTap: {
+                        activeSheet = .preferences
                     }
                 )
+                
+                // 3. Fullscreen Dedicated Universal Player Overlay (Pure SwiftUI Z-Stack: Zero UIKit Modal Glitch)
+                if playerManager.isPresented {
+                    DedicatedPlayerView()
+                        .edgesIgnoringSafeArea(.all)
+                        .zIndex(999)
+                        .transition(.opacity)
+                }
             }
-        }
-        // Dedicated Fullscreen Universal Player
-        .fullScreenCover(isPresented: $playerManager.isPresented) {
-            DedicatedPlayerView()
+            // Unified Bulletproof Sheet Presentation
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .detail(let item):
+                    DetailSheetView(
+                        item: item,
+                        onClose: {
+                            activeSheet = nil
+                        },
+                        onPlay: { mediaItem, seasonNum, episode in
+                            activeSheet = nil
+                            playerManager.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
+                        }
+                    )
+                case .search:
+                    SearchModalView(
+                        onClose: {
+                            activeSheet = nil
+                        },
+                        onSelectItem: { item in
+                            activeSheet = .detail(item)
+                        }
+                    )
+                case .preferences:
+                    TastePreferencesSheet(
+                        onClose: {
+                            activeSheet = nil
+                        }
+                    )
+                }
+            }
+            .animation(.easeInOut(duration: 0.25), value: playerManager.isPresented)
         }
     }
 }

@@ -10,26 +10,35 @@ public struct AudioSubtitleMenu: View {
     
     public var body: some View {
         VStack(spacing: 20) {
+            // Header
             HStack {
-                Text("Audio & Subtitles")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform")
+                        .foregroundColor(NetflixTheme.brandRed)
+                    Text("Audio & Subtitles")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                
                 Spacer()
+                
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
                         .padding(8)
+                        .background(Circle().fill(Color(hex: "2A2A2A")))
                 }
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
             
+            // Audio & Subtitle Selectors
             HStack(alignment: .top, spacing: 30) {
-                // Audio Tracks
+                // Audio Tracks (Dual Audio)
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("AUDIO")
-                        .font(.system(size: 12, weight: .bold))
+                    Text("AUDIO STREAM")
+                        .font(.system(size: 11, weight: .heavy))
                         .tracking(1.2)
                         .foregroundColor(NetflixTheme.textMuted)
                     
@@ -41,7 +50,7 @@ public struct AudioSubtitleMenu: View {
                                 if playerManager.selectedAudioTrack == track {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(NetflixTheme.brandRed)
                                 } else {
                                     Color.clear.frame(width: 12, height: 12)
                                 }
@@ -57,7 +66,7 @@ public struct AudioSubtitleMenu: View {
                 // Subtitles
                 VStack(alignment: .leading, spacing: 12) {
                     Text("SUBTITLES")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 11, weight: .heavy))
                         .tracking(1.2)
                         .foregroundColor(NetflixTheme.textMuted)
                     
@@ -69,7 +78,7 @@ public struct AudioSubtitleMenu: View {
                                 if playerManager.selectedSubtitleTrack == sub {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(NetflixTheme.brandRed)
                                 } else {
                                     Color.clear.frame(width: 12, height: 12)
                                 }
@@ -84,34 +93,21 @@ public struct AudioSubtitleMenu: View {
             }
             .padding(.horizontal, 20)
             
-            // External Player Fallbacks
-            VStack(alignment: .leading, spacing: 8) {
-                Text("EXTERNAL PLAYER ENGINE")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1.2)
-                    .foregroundColor(NetflixTheme.textMuted)
-                
-                HStack(spacing: 10) {
-                    ForEach(ExternalPlayerApp.allCases) { app in
-                        Button(action: {
-                            playerManager.openExternal(app)
-                        }) {
-                            Text(app.rawValue)
-                                .font(.system(size: 11, weight: .bold))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color(hex: "262626"))
-                                .cornerRadius(4)
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
+            // In-App Audio Engine Info
+            HStack(spacing: 8) {
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(NetflixTheme.brandRed)
+                Text("Dolby Digital 5.1 & Multi-Track Hardware Decoding Active")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(NetflixTheme.textSecondary)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
-        .frame(maxWidth: 420)
-        .background(Color(hex: "1F1F1F").cornerRadius(12))
-        .shadow(radius: 20)
+        .frame(maxWidth: 440)
+        .background(Color(hex: "1A1A1A").cornerRadius(14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "333333"), lineWidth: 1))
+        .shadow(color: .black.opacity(0.8), radius: 25)
     }
 }
