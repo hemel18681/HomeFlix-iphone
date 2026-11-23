@@ -49,9 +49,13 @@ public struct HomeFeedView: View {
     private var homePage: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 22) {
-                // Billboard Hero
+                // Dynamic Billboard Hero (matches user affinities & rotates on refresh)
                 BillboardHeroView(
-                    item: catalogStore.featured.first,
+                    item: catalogStore.getPersonalizedHero(
+                        history: watchlistStore.history,
+                        preferences: watchlistStore.preferences,
+                        refreshSeed: catalogStore.refreshSeed
+                    ),
                     onPlay: onPlayItem,
                     onMoreInfo: onSelectItem
                 )
@@ -68,8 +72,13 @@ public struct HomeFeedView: View {
                     )
                 }
                 
-                // Personalized Curated Rows
-                let rows = catalogStore.getPersonalizedRows(selectedPreferences: watchlistStore.preferences)
+                // Dynamic Real-Time Personalized Rows (Watch History + Likes + Preferences + Discoveries)
+                let rows = catalogStore.getPersonalizedRows(
+                    selectedPreferences: watchlistStore.preferences,
+                    history: watchlistStore.history,
+                    likes: watchlistStore.likes,
+                    refreshSeed: catalogStore.refreshSeed
+                )
                 ForEach(rows) { row in
                     ContentRowView(row: row, onSelect: onSelectItem)
                 }
@@ -78,13 +87,16 @@ public struct HomeFeedView: View {
             }
         }
         .refreshable {
-            catalogStore.loadCatalog()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                catalogStore.refreshFeed()
+            }
         }
     }
     
     // MARK: - 2. DEDICATED TV SHOWS PAGE
     private var tvShowsPage: some View {
-        let tvHero = catalogStore.featured.first(where: { $0.type == .series }) ??
+        let tvHeroes = catalogStore.featured.filter { $0.type == .series }
+        let tvHero = !tvHeroes.isEmpty ? tvHeroes[abs(catalogStore.refreshSeed) % tvHeroes.count] :
                      catalogStore.curatedRows.first(where: { $0.id == "top-10-tv" })?.items.first
         
         let tvFilters = ["All", "Top 10", "Binge-Worthy", "K-Drama", "Anime Series"]
@@ -131,6 +143,11 @@ public struct HomeFeedView: View {
                 Color.clear.frame(height: 80)
             }
         }
+        .refreshable {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                catalogStore.refreshFeed()
+            }
+        }
     }
     
     private func getTVRows() -> [CategoryRow] {
@@ -159,7 +176,8 @@ public struct HomeFeedView: View {
     
     // MARK: - 3. DEDICATED MOVIES PAGE
     private var moviesPage: some View {
-        let movieHero = catalogStore.featured.first(where: { $0.type == .movie }) ??
+        let movieHeroes = catalogStore.featured.filter { $0.type == .movie }
+        let movieHero = !movieHeroes.isEmpty ? movieHeroes[abs(catalogStore.refreshSeed) % movieHeroes.count] :
                         catalogStore.curatedRows.first(where: { $0.id == "top-10-movies" })?.items.first
         
         let movieFilters = ["All", "Top 10", "1080p HD", "Action", "Sci-Fi", "Horror", "Comedy", "3D / IMAX"]
@@ -204,6 +222,11 @@ public struct HomeFeedView: View {
                 }
                 
                 Color.clear.frame(height: 80)
+            }
+        }
+        .refreshable {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                catalogStore.refreshFeed()
             }
         }
     }
@@ -251,7 +274,8 @@ public struct HomeFeedView: View {
     
     // MARK: - 4. DEDICATED ANIME PAGE
     private var animePage: some View {
-        let animeHero = catalogStore.curatedRows.first(where: { $0.id == "anime-hits" })?.items.first ??
+        let animeHits = catalogStore.curatedRows.first(where: { $0.id == "anime-hits" })?.items ?? []
+        let animeHero = !animeHits.isEmpty ? animeHits[abs(catalogStore.refreshSeed) % animeHits.count] :
                         catalogStore.curatedRows.first(where: { $0.id == "anime-cartoons" })?.items.first
         
         let animeFilters = ["All", "Trending", "Classics", "Animation"]
@@ -296,6 +320,11 @@ public struct HomeFeedView: View {
                 }
                 
                 Color.clear.frame(height: 80)
+            }
+        }
+        .refreshable {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                catalogStore.refreshFeed()
             }
         }
     }
