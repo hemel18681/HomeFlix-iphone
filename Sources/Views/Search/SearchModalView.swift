@@ -35,95 +35,99 @@ public struct SearchModalView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 0) {
-            // Search Input Header
-            HStack(spacing: 12) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 15))
-                        .foregroundColor(HomeFlixTheme.textMuted)
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                // Search Input Header (clears iPhone Notch & Dynamic Island)
+                HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 15))
+                            .foregroundColor(HomeFlixTheme.textMuted)
+                        
+                        TextField("Search movies, shows, anime...", text: $searchText)
+                            .foregroundColor(.white)
+                            .font(.system(size: 14))
+                            .autocorrectionDisabled()
+                            .onChange(of: searchText) { _ in
+                                executeSearch()
+                            }
+                        
+                        if !searchText.isEmpty {
+                            Button(action: {
+                                searchText = ""
+                                executeSearch()
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(HomeFlixTheme.textMuted)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(hex: "262626"))
+                    .cornerRadius(6)
                     
-                    TextField("Search movies, shows, anime...", text: $searchText)
+                    Button("Cancel", action: onClose)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
-                        .font(.system(size: 14))
-                        .autocorrectionDisabled()
-                        .onChange(of: searchText) { _ in
-                            executeSearch()
-                        }
-                    
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                            executeSearch()
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(HomeFlixTheme.textMuted)
-                        }
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(hex: "262626"))
-                .cornerRadius(6)
-                
-                Button("Cancel", action: onClose)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            
-            // Filter Pills
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(filterOptions, id: \.self) { opt in
-                        Button(action: {
-                            selectedFilter = opt
-                            executeSearch()
-                        }) {
-                            Text(opt)
-                                .font(.system(size: 12, weight: selectedFilter == opt ? .bold : .medium))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(selectedFilter == opt ? HomeFlixTheme.brandRed : Color(hex: "222222"))
-                                .cornerRadius(14)
-                                .foregroundColor(.white)
-                        }
-                    }
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 10)
-            }
-            
-            // Search Results Grid
-            ScrollView(.vertical, showsIndicators: false) {
-                if searchResults.isEmpty && !searchText.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "film")
-                            .font(.system(size: 40))
-                            .foregroundColor(HomeFlixTheme.textMuted)
-                            .padding(.top, 40)
-                        Text("No matching titles found")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(HomeFlixTheme.textSecondary)
-                    }
-                } else {
-                    LazyVGrid(columns: columns, spacing: 10) {
-                        ForEach(searchResults) { item in
-                            MediaCardView(
-                                item: item,
-                                width: 108,
-                                isLandscape: false,
-                                onSelect: onSelectItem
-                            )
+                .padding(.top, max(14, proxy.safeAreaInsets.top + 6))
+                .padding(.bottom, 12)
+                
+                // Filter Pills
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(filterOptions, id: \.self) { opt in
+                            Button(action: {
+                                selectedFilter = opt
+                                executeSearch()
+                            }) {
+                                Text(opt)
+                                    .font(.system(size: 12, weight: selectedFilter == opt ? .bold : .medium))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(selectedFilter == opt ? HomeFlixTheme.brandRed : Color(hex: "222222"))
+                                    .cornerRadius(14)
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.bottom, 10)
+                }
+                
+                // Search Results Grid
+                ScrollView(.vertical, showsIndicators: false) {
+                    if searchResults.isEmpty && !searchText.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "film")
+                                .font(.system(size: 40))
+                                .foregroundColor(HomeFlixTheme.textMuted)
+                                .padding(.top, 40)
+                            Text("No matching titles found")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(HomeFlixTheme.textSecondary)
+                        }
+                    } else {
+                        let cardWidth = (proxy.size.width - 48) / 3
+                        LazyVGrid(columns: columns, spacing: 10) {
+                            ForEach(searchResults) { item in
+                                MediaCardView(
+                                    item: item,
+                                    width: cardWidth,
+                                    isLandscape: false,
+                                    onSelect: onSelectItem
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    }
                 }
             }
         }
-        .background(HomeFlixTheme.background)
+        .background(HomeFlixTheme.background.edgesIgnoringSafeArea(.all))
         .onAppear {
             executeSearch()
         }

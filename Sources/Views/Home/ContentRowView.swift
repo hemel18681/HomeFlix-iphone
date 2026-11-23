@@ -17,11 +17,29 @@ public struct ContentRowView: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(HomeFlixTheme.textPrimary)
                 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(HomeFlixTheme.brandRed)
+                if row.id != "continue-watching" {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(HomeFlixTheme.brandRed)
+                }
                 
                 Spacer()
+                
+                if row.id == "continue-watching" {
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            WatchlistStore.shared.clearWatchHistory()
+                        }
+                    }) {
+                        Text("Clear All")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(HomeFlixTheme.textSecondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.12))
+                            .cornerRadius(4)
+                    }
+                }
             }
             .padding(.horizontal, 16)
             
@@ -41,6 +59,19 @@ public struct ContentRowView: View {
                                 )
                                 .zIndex(1)
                             }
+                        } else if row.id == "continue-watching" {
+                            MediaCardView(
+                                item: item,
+                                width: 145,
+                                isLandscape: true,
+                                showRemoveButton: true,
+                                onRemove: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        WatchlistStore.shared.removeFromWatchHistory(mediaId: item.id)
+                                    }
+                                },
+                                onSelect: onSelect
+                            )
                         } else {
                             MediaCardView(
                                 item: item,

@@ -139,16 +139,31 @@ public final class WatchlistStore: ObservableObject {
         history[id]
     }
     
+    public func removeFromWatchHistory(mediaId: String) {
+        history.removeValue(forKey: mediaId)
+        if let encoded = try? JSONEncoder().encode(history) {
+            UserDefaults.standard.set(encoded, forKey: historyKey)
+        }
+    }
+    
+    public func clearWatchHistory() {
+        history.removeAll()
+        UserDefaults.standard.removeObject(forKey: historyKey)
+    }
+    
     public var continueWatchingItems: [MediaItem] {
         history.values
             .filter { $0.percent > 1 && $0.percent < 95 }
             .sorted { $0.updatedAt > $1.updatedAt }
             .map { h in
-                MediaItem(
+                if let found = CatalogStore.shared.findItem(by: h.mediaId) {
+                    return found
+                }
+                return MediaItem(
                     id: h.mediaId,
                     type: h.type == "series" ? .series : .movie,
                     title: h.title,
-                    category: "In Progress",
+                    category: "Continue Watching",
                     poster: h.poster,
                     backdrop: h.poster
                 )

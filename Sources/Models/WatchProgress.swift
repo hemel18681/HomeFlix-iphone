@@ -36,4 +36,20 @@ public struct WatchProgress: Identifiable, Codable, Hashable {
         self.percent = percent
         self.updatedAt = updatedAt
     }
+    
+    public var remainingTimeFormatted: String {
+        let remaining = max(0, duration - currentTime)
+        let hours = Int(remaining) / 3600
+        let minutes = (Int(remaining) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m left"
+        } else {
+            return "\(max(1, minutes))m left"
+        }
+    }
+    
+    public var episodeInfoFormatted: String? {
+        guard let s = seasonNumber, let e = episodeNumber else { return nil }
+        return "S\(s):E\(e)"
+    }
 }

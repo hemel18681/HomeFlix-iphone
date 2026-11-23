@@ -99,51 +99,117 @@ public struct DetailSheetView: View {
                     }
                     
                     // Action Buttons (Play & My List)
-                    HStack(spacing: 12) {
-                        Button(action: {
-                            if currentItem.type == .series, let s = seriesDetail?.seasons.first, let ep = s.episodes.first {
-                                onPlay(currentItem, s.seasonNumber, ep)
+                    let savedProgress = watchlistStore.getProgress(currentItem.id)
+                    let hasProgress = savedProgress != nil && (savedProgress?.percent ?? 0) > 1 && (savedProgress?.percent ?? 0) < 95
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                if currentItem.type == .series {
+                                    if hasProgress, let sNum = savedProgress?.seasonNumber, let epNum = savedProgress?.episodeNumber,
+                                       let s = seriesDetail?.seasons.first(where: { $0.seasonNumber == sNum }),
+                                       let ep = s.episodes.first(where: { $0.episodeNumber == epNum }) {
+                                        onPlay(currentItem, sNum, ep)
+                                    } else if let s = seriesDetail?.seasons.first, let ep = s.episodes.first {
+                                        onPlay(currentItem, s.seasonNumber, ep)
+                                    } else {
+                                        onPlay(currentItem, nil, nil)
+                                    }
+                                } else {
+                                    onPlay(currentItem, nil, nil)
+                                }
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 16, weight: .bold))
+                                    if currentItem.type == .series, let s = savedProgress?.seasonNumber, let e = savedProgress?.episodeNumber, hasProgress {
+                                        Text("Resume S\(s):E\(e)")
+                                            .font(.system(size: 15, weight: .bold))
+                                    } else if hasProgress {
+                                        Text("Resume")
+                                            .font(.system(size: 15, weight: .bold))
+                                    } else {
+                                        Text("Play")
+                                            .font(.system(size: 15, weight: .bold))
+                                    }
+                                }
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color.white)
+                                .cornerRadius(4)
+                            }
+                            
+                            Button(action: {
+                                watchlistStore.toggleWatchlist(item: currentItem)
+                            }) {
+                                VStack(spacing: 4) {
+                                    Image(systemName: isWatchlisted ? "checkmark" : "plus")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text(isWatchlisted ? "In List" : "My List")
+                                        .font(.system(size: 11, weight: .medium))
+                                }
+                                .foregroundColor(.white)
+                                .frame(width: 60)
+                            }
+                            
+                            if hasProgress {
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        watchlistStore.removeFromWatchHistory(mediaId: currentItem.id)
+                                    }
+                                }) {
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "xmark.circle")
+                                            .font(.system(size: 16, weight: .semibold))
+                                        Text("Remove")
+                                            .font(.system(size: 11, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(width: 60)
+                                }
                             } else {
-                                onPlay(currentItem, nil, nil)
+                                Button(action: {
+                                    watchlistStore.setLike(id: currentItem.id, isLiked: true)
+                                }) {
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "hand.thumbsup")
+                                            .font(.system(size: 16, weight: .semibold))
+                                        Text("Rate")
+                                            .font(.system(size: 11, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(width: 60)
+                                }
                             }
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 16, weight: .bold))
-                                Text("Play")
-                                    .font(.system(size: 15, weight: .bold))
-                            }
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Color.white)
-                            .cornerRadius(4)
                         }
                         
-                        Button(action: {
-                            watchlistStore.toggleWatchlist(item: currentItem)
-                        }) {
-                            VStack(spacing: 4) {
-                                Image(systemName: isWatchlisted ? "checkmark" : "plus")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text(isWatchlisted ? "In List" : "My List")
-                                    .font(.system(size: 11, weight: .medium))
+                        // Remaining Time & Progress Indicator
+                        if let p = savedProgress, hasProgress {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(p.remainingTimeFormatted)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(HomeFlixTheme.textSecondary)
+                                    Spacer()
+                                    Text("\(Int(p.percent))%")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(HomeFlixTheme.textSecondary)
+                                }
+                                
+                                GeometryReader { geo in
+                                    ZStack(alignment: .leading) {
+                                        Rectangle()
+                                            .fill(Color.white.opacity(0.2))
+                                            .frame(height: 3)
+                                        Rectangle()
+                                            .fill(HomeFlixTheme.brandRed)
+                                            .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(p.percent / 100.0))), height: 3)
+                                    }
+                                }
+                                .frame(height: 3)
                             }
-                            .foregroundColor(.white)
-                            .frame(width: 60)
-                        }
-                        
-                        Button(action: {
-                            watchlistStore.setLike(id: currentItem.id, isLiked: true)
-                        }) {
-                            VStack(spacing: 4) {
-                                Image(systemName: "hand.thumbsup")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Rate")
-                                    .font(.system(size: 11, weight: .medium))
-                            }
-                            .foregroundColor(.white)
-                            .frame(width: 60)
+                            .padding(.top, 2)
                         }
                     }
                     .padding(.top, 4)

@@ -78,6 +78,8 @@ public final class DedicatedPlayerManager: ObservableObject {
     private var toastTimer: Timer?
     private var statusObserver: NSKeyValueObservation?
     private var bufferObserver: NSKeyValueObservation?
+    private var pendingResumeTime: Double? = nil
+    private var lastPersistTime: Double = 0
     
     public static let verifiedSampleStreamURL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
     
@@ -176,8 +178,29 @@ public final class DedicatedPlayerManager: ObservableObject {
         resumeTime: Double? = nil
     ) {
         self.activeItem = item
-        self.activeSeasonNumber = seasonNumber
-        self.activeEpisode = episode
+        
+        // Auto-resolve saved episode progress for series if not explicitly passed
+        var effectiveSeasonNum = seasonNumber
+        var effectiveEpisode = episode
+        var effectiveResume = resumeTime
+        
+        if let saved = WatchlistStore.shared.getProgress(item.id), saved.percent > 1 && saved.percent < 95 {
+            if effectiveResume == nil && saved.currentTime > 2.0 {
+                effectiveResume = saved.currentTime
+            }
+            if item.type == .series && effectiveEpisode == nil {
+                if let sNum = saved.seasonNumber, let epNum = saved.episodeNumber,
+                   let detail = CatalogStore.shared.getSeriesDetail(for: item.id),
+                   let season = detail.seasons.first(where: { $0.seasonNumber == sNum }),
+                   let matchedEp = season.episodes.first(where: { $0.episodeNumber == epNum }) {
+                    effectiveSeasonNum = sNum
+                    effectiveEpisode = matchedEp
+                }
+            }
+        }
+        
+        self.activeSeasonNumber = effectiveSeasonNum
+        self.activeEpisode = effectiveEpisode
         self.isPresented = true
         self.isPlaying = true
         self.isBuffering = true
@@ -187,9 +210,10 @@ public final class DedicatedPlayerManager: ObservableObject {
         self.showEpisodesSheet = false
         self.isUsingResilientFallback = false
         self.statusToast = nil
-        self.currentTime = resumeTime ?? 0
+        self.currentTime = effectiveResume ?? 0
+        self.pendingResumeTime = (effectiveResume != nil && effectiveResume! > 2.0) ? effectiveResume : nil
         
-        setupPlayer(resumeTime: resumeTime)
+        setupPlayer(resumeTime: effectiveResume)
         resetHideControlsTimer()
     }
     
@@ -225,6 +249,18 @@ public final class DedicatedPlayerManager: ObservableObject {
                     let dur = CMTimeGetSeconds(item.duration)
                     if !dur.isNaN && dur > 0 {
                         self.duration = dur
+                    }
+                    // Auto-resume from exact spot like Netflix
+                    if let resume = self.pendingResumeTime, resume > 2.0, self.duration > 0, resume < (self.duration - 5.0) {
+                        let target = CMTime(seconds: resume, preferredTimescale: 600)
+                        self.player?.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+                            if finished {
+                                Task { @MainActor [weak self] in
+                                    self?.showToast("Resumed from \(self?.formatTime(resume) ?? "")")
+                                }
+                            }
+                        }
+                        self.pendingResumeTime = nil
                     }
                     if self.isPlaying {
                         self.player?.play()
@@ -278,11 +314,6 @@ public final class DedicatedPlayerManager: ObservableObject {
             self.persistProgress()
         }
         
-        if let resume = resumeTime, resume > 0 {
-            let targetTime = CMTime(seconds: resume, preferredTimescale: 600)
-            newPlayer.seek(to: targetTime, toleranceBefore: .zero, toleranceAfter: .zero)
-        }
-        
         newPlayer.play()
     }
     
@@ -303,6 +334,10 @@ public final class DedicatedPlayerManager: ObservableObject {
                     let dur = CMTimeGetSeconds(item.duration)
                     if !dur.isNaN && dur > 0 {
                         self.duration = dur
+                    }
+                    if self.currentTime > 2.0 {
+                        let target = CMTime(seconds: self.currentTime, preferredTimescale: 600)
+                        self.player?.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
                     }
                     if self.isPlaying {
                         self.player?.play()
@@ -329,6 +364,7 @@ public final class DedicatedPlayerManager: ObservableObject {
     }
     
     public func close() {
+        persistProgress(force: true)
         cleanPlayer()
         self.isPresented = false
         self.activeItem = nil
@@ -369,6 +405,7 @@ public final class DedicatedPlayerManager: ObservableObject {
         if isPlaying {
             p.pause()
             isPlaying = false
+            persistProgress(force: true)
         } else {
             p.play()
             p.rate = playbackSpeed
@@ -484,8 +521,19 @@ public final class DedicatedPlayerManager: ObservableObject {
         }
     }
     
-    private func persistProgress() {
-        guard let item = activeItem, duration > 0 else { return }
+    private func persistProgress(force: Bool = false) {
+        guard let item = activeItem, duration > 10 else { return }
+        
+        // If content is >= 95% finished, remove from continue watching
+        if (currentTime / duration) >= 0.95 {
+            WatchlistStore.shared.removeFromWatchHistory(mediaId: item.id)
+            return
+        }
+        
+        // Throttle progress persistence unless forced
+        guard force || abs(currentTime - lastPersistTime) >= 3.0 else { return }
+        lastPersistTime = currentTime
+        
         WatchlistStore.shared.updateProgress(
             mediaId: item.id,
             title: item.title,

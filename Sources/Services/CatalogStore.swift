@@ -175,4 +175,16 @@ public final class CatalogStore: ObservableObject {
         }
         return matches
     }
+    
+    public func findItem(by id: String) -> MediaItem? {
+        if let found = allItems.first(where: { $0.id == id }) {
+            return found
+        }
+        for row in curatedRows {
+            if let found = row.items.first(where: { $0.id == id }) {
+                return found
+            }
+        }
+        return featured.first(where: { $0.id == id })
+    }
 }

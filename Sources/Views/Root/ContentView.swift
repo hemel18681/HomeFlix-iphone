@@ -1,22 +1,10 @@
 import SwiftUI
 
-public enum ActiveSheet: Identifiable {
-    case detail(MediaItem)
-    case search
-    case preferences
-    
-    public var id: String {
-        switch self {
-        case .detail(let item): return "detail_\(item.id)"
-        case .search: return "search"
-        case .preferences: return "preferences"
-        }
-    }
-}
-
 public struct ContentView: View {
     @State private var selectedTab: String = "home"
-    @State private var activeSheet: ActiveSheet? = nil
+    @State private var isSearchPresented: Bool = false
+    @State private var activeDetailItem: MediaItem? = nil
+    @State private var showPreferences: Bool = false
     
     @ObservedObject private var playerManager = DedicatedPlayerManager.shared
     @ObservedObject private var catalogStore = CatalogStore.shared
@@ -33,25 +21,47 @@ public struct ContentView: View {
                 HomeFeedView(
                     selectedTab: $selectedTab,
                     onSelectItem: { item in
-                        activeSheet = .detail(item)
+                        activeDetailItem = item
                     },
                     onPlayItem: { item in
                         playerManager.play(item: item)
                     }
                 )
                 
-                // 2. Translucent Floating Navbar
-                HomeFlixNavbarView(
-                    selectedTab: $selectedTab,
-                    onSearchTap: {
-                        activeSheet = .search
-                    },
-                    onPreferencesTap: {
-                        activeSheet = .preferences
-                    }
-                )
+                // 2. Translucent Floating Navbar (hidden when search is open)
+                if !isSearchPresented {
+                    HomeFlixNavbarView(
+                        selectedTab: $selectedTab,
+                        onSearchTap: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isSearchPresented = true
+                            }
+                        },
+                        onPreferencesTap: {
+                            showPreferences = true
+                        }
+                    )
+                    .transition(.opacity)
+                }
                 
-                // 3. Fullscreen Dedicated Universal Player Overlay (Pure SwiftUI Z-Stack: Zero UIKit Modal Glitch)
+                // 3. Search Panel Fullscreen View (State Preserved across playback!)
+                if isSearchPresented {
+                    SearchModalView(
+                        onClose: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isSearchPresented = false
+                            }
+                        },
+                        onSelectItem: { item in
+                            activeDetailItem = item
+                        }
+                    )
+                    .edgesIgnoringSafeArea(.all)
+                    .zIndex(50)
+                    .transition(.opacity)
+                }
+                
+                // 4. Fullscreen Dedicated Universal Player Overlay (Pure SwiftUI Z-Stack)
                 if playerManager.isPresented {
                     DedicatedPlayerView()
                         .edgesIgnoringSafeArea(.all)
@@ -59,38 +69,28 @@ public struct ContentView: View {
                         .transition(.opacity)
                 }
             }
-            // Unified Bulletproof Sheet Presentation
-            .sheet(item: $activeSheet) { sheet in
-                switch sheet {
-                case .detail(let item):
-                    DetailSheetView(
-                        item: item,
-                        onClose: {
-                            activeSheet = nil
-                        },
-                        onPlay: { mediaItem, seasonNum, episode in
-                            activeSheet = nil
-                            playerManager.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
-                        }
-                    )
-                case .search:
-                    SearchModalView(
-                        onClose: {
-                            activeSheet = nil
-                        },
-                        onSelectItem: { item in
-                            activeSheet = .detail(item)
-                        }
-                    )
-                case .preferences:
-                    TastePreferencesSheet(
-                        onClose: {
-                            activeSheet = nil
-                        }
-                    )
-                }
+            // Detail Sheet (Works over both HomeFeed and SearchModalView!)
+            .sheet(item: $activeDetailItem) { item in
+                DetailSheetView(
+                    item: item,
+                    onClose: {
+                        activeDetailItem = nil
+                    },
+                    onPlay: { mediaItem, seasonNum, episode in
+                        activeDetailItem = nil
+                        playerManager.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
+                    }
+                )
+            }
+            .sheet(isPresented: $showPreferences) {
+                TastePreferencesSheet(
+                    onClose: {
+                        showPreferences = false
+                    }
+                )
             }
             .animation(.easeInOut(duration: 0.25), value: playerManager.isPresented)
+            .animation(.easeInOut(duration: 0.2), value: isSearchPresented)
         }
     }
 }

@@ -88,12 +88,38 @@ public struct MediaCardView: View {
                             
                             Spacer()
                             
-                            Text(item.displayYear)
-                                .font(.system(size: 9, weight: .medium))
-                                .foregroundColor(HomeFlixTheme.textSecondary)
+                            if let p = progress, p.percent > 0, let epInfo = p.episodeInfoFormatted {
+                                Text(epInfo)
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(HomeFlixTheme.brandRed)
+                            } else if let p = progress, p.percent > 0 {
+                                Text(p.remainingTimeFormatted)
+                                    .font(.system(size: 8, weight: .medium))
+                                    .foregroundColor(HomeFlixTheme.textSecondary)
+                            } else {
+                                Text(item.displayYear)
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundColor(HomeFlixTheme.textSecondary)
+                            }
                         }
                     }
                     .padding(6)
+                    
+                    // Center Play Indicator for In-Progress Cards
+                    if let p = progress, p.percent > 0, isLandscape {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Image(systemName: "play.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.white.opacity(0.85))
+                                    .shadow(color: .black.opacity(0.7), radius: 4)
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                    }
                     
                     // Watch Progress Bar
                     if let p = progress, p.percent > 0 {
@@ -106,7 +132,7 @@ public struct MediaCardView: View {
                                         .frame(height: 3)
                                     Rectangle()
                                         .fill(HomeFlixTheme.brandRed)
-                                        .frame(width: geo.size.width * CGFloat(p.percent / 100.0), height: 3)
+                                        .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(p.percent / 100.0))), height: 3)
                                 }
                             }
                             .frame(height: 3)
