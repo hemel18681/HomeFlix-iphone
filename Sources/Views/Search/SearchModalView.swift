@@ -41,7 +41,7 @@ public struct SearchModalView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15))
-                        .foregroundColor(NetflixTheme.textMuted)
+                        .foregroundColor(HomeFlixTheme.textMuted)
                     
                     TextField("Search movies, shows, anime...", text: $searchText)
                         .foregroundColor(.white)
@@ -57,7 +57,7 @@ public struct SearchModalView: View {
                             executeSearch()
                         }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(NetflixTheme.textMuted)
+                                .foregroundColor(HomeFlixTheme.textMuted)
                         }
                     }
                 }
@@ -85,7 +85,7 @@ public struct SearchModalView: View {
                                 .font(.system(size: 12, weight: selectedFilter == opt ? .bold : .medium))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(selectedFilter == opt ? NetflixTheme.brandRed : Color(hex: "222222"))
+                                .background(selectedFilter == opt ? HomeFlixTheme.brandRed : Color(hex: "222222"))
                                 .cornerRadius(14)
                                 .foregroundColor(.white)
                         }
@@ -101,11 +101,11 @@ public struct SearchModalView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "film")
                             .font(.system(size: 40))
-                            .foregroundColor(NetflixTheme.textMuted)
+                            .foregroundColor(HomeFlixTheme.textMuted)
                             .padding(.top, 40)
                         Text("No matching titles found")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(NetflixTheme.textSecondary)
+                            .foregroundColor(HomeFlixTheme.textSecondary)
                     }
                 } else {
                     LazyVGrid(columns: columns, spacing: 10) {
@@ -123,7 +123,7 @@ public struct SearchModalView: View {
                 }
             }
         }
-        .background(NetflixTheme.background)
+        .background(HomeFlixTheme.background)
         .onAppear {
             executeSearch()
         }

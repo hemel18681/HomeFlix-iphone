@@ -41,7 +41,7 @@ public struct ContentView: View {
                 )
                 
                 // 2. Translucent Floating Navbar
-                NetflixNavbarView(
+                HomeFlixNavbarView(
                     selectedTab: $selectedTab,
                     onSearchTap: {
                         activeSheet = .search

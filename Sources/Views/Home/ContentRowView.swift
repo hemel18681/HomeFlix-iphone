@@ -15,11 +15,11 @@ public struct ContentRowView: View {
             HStack(spacing: 4) {
                 Text(row.title)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(NetflixTheme.textPrimary)
+                    .foregroundColor(HomeFlixTheme.textPrimary)
                 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(NetflixTheme.brandRed)
+                    .foregroundColor(HomeFlixTheme.brandRed)
                 
                 Spacer()
             }

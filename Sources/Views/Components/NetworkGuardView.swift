@@ -67,7 +67,7 @@ public struct NetworkGuardView<Content: View>: View {
                     
                     // Ambient red radial glow
                     RadialGradient(
-                        colors: [NetflixTheme.brandRed.opacity(0.18), .clear],
+                        colors: [HomeFlixTheme.brandRed.opacity(0.18), .clear],
                         center: .center,
                         startRadius: 20,
                         endRadius: 280
@@ -95,18 +95,18 @@ public struct NetworkGuardView<Content: View>: View {
             // Pulsing radar rings
             ZStack {
                 Circle()
-                    .stroke(NetflixTheme.brandRed.opacity(0.3), lineWidth: 2)
+                    .stroke(HomeFlixTheme.brandRed.opacity(0.3), lineWidth: 2)
                     .frame(width: isPulseAnimating ? 110 : 64, height: isPulseAnimating ? 110 : 64)
                     .opacity(isPulseAnimating ? 0 : 1)
                 
                 Circle()
                     .fill(Color(hex: "221414"))
                     .frame(width: 72, height: 72)
-                    .overlay(Circle().stroke(NetflixTheme.brandRed.opacity(0.5), lineWidth: 1.5))
+                    .overlay(Circle().stroke(HomeFlixTheme.brandRed.opacity(0.5), lineWidth: 1.5))
                 
                 Image(systemName: "antenna.radiowaves.left.and.right")
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(NetflixTheme.brandRed)
+                    .foregroundColor(HomeFlixTheme.brandRed)
             }
             .onAppear {
                 withAnimation(.easeOut(duration: 1.4).repeatForever(autoreverses: false)) {
@@ -118,7 +118,7 @@ public struct NetworkGuardView<Content: View>: View {
                 Text("HOMEFLIX")
                     .font(.system(size: 22, weight: .black))
                     .tracking(2.5)
-                    .foregroundColor(NetflixTheme.brandRed)
+                    .foregroundColor(HomeFlixTheme.brandRed)
                 
                 Text("Verifying BDIX Peering Node...")
                     .font(.system(size: 16, weight: .bold))
@@ -126,12 +126,12 @@ public struct NetworkGuardView<Content: View>: View {
                 
                 Text("Probing direct optical link to DhakaFlix node 172.16.50.4")
                     .font(.system(size: 12))
-                    .foregroundColor(NetflixTheme.textSecondary)
+                    .foregroundColor(HomeFlixTheme.textSecondary)
                     .multilineTextAlignment(.center)
             }
             
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: NetflixTheme.brandRed))
+                .progressViewStyle(CircularProgressViewStyle(tint: HomeFlixTheme.brandRed))
                 .scaleEffect(1.2)
                 .padding(.top, 4)
         }
@@ -147,11 +147,11 @@ public struct NetworkGuardView<Content: View>: View {
                     Circle()
                         .fill(Color(hex: "281414"))
                         .frame(width: 76, height: 76)
-                        .overlay(Circle().stroke(NetflixTheme.brandRed.opacity(0.6), lineWidth: 1.5))
+                        .overlay(Circle().stroke(HomeFlixTheme.brandRed.opacity(0.6), lineWidth: 1.5))
                     
                     Image(systemName: "wifi.slash")
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(NetflixTheme.brandRed)
+                        .foregroundColor(HomeFlixTheme.brandRed)
                 }
                 .padding(.top, 24)
                 
@@ -190,12 +190,12 @@ public struct NetworkGuardView<Content: View>: View {
                     HStack {
                         Image(systemName: "server.rack")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(NetflixTheme.brandRed)
+                            .foregroundColor(HomeFlixTheme.brandRed)
                         
                         Text("WHAT TO TELL YOUR ISP:")
                             .font(.system(size: 11, weight: .bold))
                             .tracking(1.0)
-                            .foregroundColor(NetflixTheme.textSecondary)
+                            .foregroundColor(HomeFlixTheme.textSecondary)
                         
                         Spacer()
                         
@@ -214,7 +214,7 @@ public struct NetworkGuardView<Content: View>: View {
                                 Text(isCopied ? "Copied!" : "Copy Message")
                                     .font(.system(size: 11, weight: .bold))
                             }
-                            .foregroundColor(isCopied ? Color(hex: "4ADE80") : NetflixTheme.brandRed)
+                            .foregroundColor(isCopied ? Color(hex: "4ADE80") : HomeFlixTheme.brandRed)
                         }
                     }
                     
@@ -248,9 +248,9 @@ public struct NetworkGuardView<Content: View>: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(NetflixTheme.brandRed)
+                        .background(HomeFlixTheme.brandRed)
                         .cornerRadius(8)
-                        .shadow(color: NetflixTheme.brandRed.opacity(0.3), radius: 6)
+                        .shadow(color: HomeFlixTheme.brandRed.opacity(0.3), radius: 6)
                     }
                     
                     // Bypass / Preview Button
@@ -263,7 +263,7 @@ public struct NetworkGuardView<Content: View>: View {
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 12, weight: .bold))
                         }
-                        .foregroundColor(NetflixTheme.textPrimary)
+                        .foregroundColor(HomeFlixTheme.textPrimary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
                         .background(Color(hex: "222222"))
@@ -282,7 +282,7 @@ public struct NetworkGuardView<Content: View>: View {
                     }) {
                         Text(networkStore.showDiagnosisDetails ? "Hide Network Diagnosis ▲" : "View Network Diagnosis ▼")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(NetflixTheme.textMuted)
+                            .foregroundColor(HomeFlixTheme.textMuted)
                             .underline()
                     }
                     

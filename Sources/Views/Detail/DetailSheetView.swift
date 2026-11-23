@@ -35,16 +35,17 @@ public struct DetailSheetView: View {
     public var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
-                // 1. Top Backdrop with Close Button
+                // 1. Top Backdrop with Close Button (anchored to top)
                 ZStack(alignment: .topTrailing) {
                     AsyncImageView(
                         url: currentItem.backdropURL,
                         aspectRatio: 16.0 / 9.0,
-                        contentMode: .fill
+                        contentMode: .fill,
+                        alignment: .top
                     )
                     .overlay(
                         LinearGradient(
-                            colors: [.clear, NetflixTheme.background.opacity(0.9), NetflixTheme.background],
+                            colors: [.clear, HomeFlixTheme.background.opacity(0.9), HomeFlixTheme.background],
                             startPoint: .center,
                             endPoint: .bottom
                         )
@@ -70,7 +71,7 @@ public struct DetailSheetView: View {
                     HStack(spacing: 8) {
                         Text(currentItem.displayYear)
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(NetflixTheme.textSecondary)
+                            .foregroundColor(HomeFlixTheme.textSecondary)
                         
                         Text(currentItem.displayQuality)
                             .font(.system(size: 10, weight: .bold))
@@ -85,7 +86,7 @@ public struct DetailSheetView: View {
                                 .font(.system(size: 9, weight: .heavy))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
-                                .background(NetflixTheme.brandRed)
+                                .background(HomeFlixTheme.brandRed)
                                 .cornerRadius(3)
                                 .foregroundColor(.white)
                         }
@@ -93,7 +94,7 @@ public struct DetailSheetView: View {
                         if let seasons = currentItem.totalSeasons, seasons > 0 {
                             Text("\(seasons) Season\(seasons > 1 ? "s" : "")")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(NetflixTheme.textSecondary)
+                                .foregroundColor(HomeFlixTheme.textSecondary)
                         }
                     }
                     
@@ -184,6 +185,6 @@ public struct DetailSheetView: View {
                 Color.clear.frame(height: 40)
             }
         }
-        .background(NetflixTheme.background)
+        .background(HomeFlixTheme.background)
     }
 }

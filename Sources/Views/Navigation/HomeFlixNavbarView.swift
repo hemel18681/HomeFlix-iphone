@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct NetflixNavbarView: View {
+public struct HomeFlixNavbarView: View {
     @Binding var selectedTab: String
     let onSearchTap: () -> Void
     let onPreferencesTap: () -> Void
@@ -27,11 +27,11 @@ public struct NetflixNavbarView: View {
         VStack(spacing: 8) {
             // Main Navigation Bar Row
             HStack(spacing: 12) {
-                // Netflix Brand Logo
-                Text("NETFLIX")
+                // HomeFlix Brand Logo
+                Text("HOMEFLIX")
                     .font(.system(size: 20, weight: .black, design: .default))
-                    .tracking(1.5)
-                    .foregroundColor(NetflixTheme.brandRed)
+                    .tracking(2.0)
+                    .foregroundColor(HomeFlixTheme.brandRed)
                 
                 Spacer()
                 
@@ -73,11 +73,11 @@ public struct NetflixNavbarView: View {
                             VStack(spacing: 4) {
                                 Text(label)
                                     .font(.system(size: 13, weight: selectedTab == tabId ? .bold : .medium))
-                                    .foregroundColor(selectedTab == tabId ? .white : NetflixTheme.textSecondary)
+                                    .foregroundColor(selectedTab == tabId ? .white : HomeFlixTheme.textSecondary)
                                 
                                 if selectedTab == tabId {
                                     Rectangle()
-                                        .fill(NetflixTheme.brandRed)
+                                        .fill(HomeFlixTheme.brandRed)
                                         .frame(height: 2)
                                         .cornerRadius(1)
                                 } else {
@@ -94,8 +94,9 @@ public struct NetflixNavbarView: View {
             .padding(.bottom, 6)
         }
         .background(
-            NetflixTheme.background.opacity(0.92)
+            HomeFlixTheme.background.opacity(0.92)
                 .background(.ultraThinMaterial)
         )
     }
 }
+

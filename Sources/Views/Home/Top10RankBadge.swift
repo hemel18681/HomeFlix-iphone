@@ -12,7 +12,7 @@ public struct Top10RankBadge: View {
             // Shadow / Outline Layer
             Text("\(rank)")
                 .font(.system(size: 96, weight: .black, design: .rounded))
-                .foregroundColor(NetflixTheme.background)
+                .foregroundColor(HomeFlixTheme.background)
                 .shadow(color: Color(hex: "595959"), radius: 1, x: -1, y: -1)
                 .shadow(color: Color(hex: "595959"), radius: 1, x: 1, y: -1)
                 .shadow(color: Color(hex: "595959"), radius: 1, x: -1, y: 1)

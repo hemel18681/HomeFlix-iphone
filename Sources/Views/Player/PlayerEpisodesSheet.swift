@@ -47,7 +47,7 @@ public struct PlayerEpisodesSheet: View {
                                 .foregroundColor(.white)
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(NetflixTheme.textSecondary)
+                                .foregroundColor(HomeFlixTheme.textSecondary)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -94,13 +94,13 @@ public struct PlayerEpisodesSheet: View {
                                             .cornerRadius(6)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 6)
-                                                    .stroke(isPlaying ? NetflixTheme.brandRed : Color.clear, lineWidth: 1.5)
+                                                    .stroke(isPlaying ? HomeFlixTheme.brandRed : Color.clear, lineWidth: 1.5)
                                             )
                                         
                                         if isPlaying {
                                             Image(systemName: "speaker.wave.3.fill")
                                                 .font(.system(size: 16))
-                                                .foregroundColor(NetflixTheme.brandRed)
+                                                .foregroundColor(HomeFlixTheme.brandRed)
                                         } else {
                                             Image(systemName: "play.fill")
                                                 .font(.system(size: 14))
@@ -112,13 +112,13 @@ public struct PlayerEpisodesSheet: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("\(ep.episodeNumber). \(ep.title)")
                                             .font(.system(size: 14, weight: isPlaying ? .bold : .semibold))
-                                            .foregroundColor(isPlaying ? NetflixTheme.brandRed : .white)
+                                            .foregroundColor(isPlaying ? HomeFlixTheme.brandRed : .white)
                                             .lineLimit(1)
                                         
                                         if let size = ep.fileSize, !size.isEmpty {
                                             Text(size)
                                                 .font(.system(size: 11))
-                                                .foregroundColor(NetflixTheme.textMuted)
+                                                .foregroundColor(HomeFlixTheme.textMuted)
                                         }
                                     }
                                     
@@ -129,7 +129,7 @@ public struct PlayerEpisodesSheet: View {
                                             .font(.system(size: 9, weight: .black))
                                             .padding(.horizontal, 6)
                                             .padding(.vertical, 2)
-                                            .background(NetflixTheme.brandRed)
+                                            .background(HomeFlixTheme.brandRed)
                                             .cornerRadius(3)
                                             .foregroundColor(.white)
                                     }
@@ -150,10 +150,10 @@ public struct PlayerEpisodesSheet: View {
                     Spacer()
                     Image(systemName: "film")
                         .font(.system(size: 32))
-                        .foregroundColor(NetflixTheme.textMuted)
+                        .foregroundColor(HomeFlixTheme.textMuted)
                     Text("No episode data available for this title.")
                         .font(.system(size: 13))
-                        .foregroundColor(NetflixTheme.textSecondary)
+                        .foregroundColor(HomeFlixTheme.textSecondary)
                     Spacer()
                 }
             }

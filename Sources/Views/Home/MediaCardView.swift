@@ -5,6 +5,8 @@ public struct MediaCardView: View {
     var rank: Int? = nil
     var width: CGFloat = 160
     var isLandscape: Bool = true
+    var showRemoveButton: Bool = false
+    var onRemove: (() -> Void)? = nil
     let onSelect: (MediaItem) -> Void
     
     @ObservedObject private var watchlistStore = WatchlistStore.shared
@@ -15,12 +17,16 @@ public struct MediaCardView: View {
         rank: Int? = nil,
         width: CGFloat = 160,
         isLandscape: Bool = true,
+        showRemoveButton: Bool = false,
+        onRemove: (() -> Void)? = nil,
         onSelect: @escaping (MediaItem) -> Void
     ) {
         self.item = item
         self.rank = rank
         self.width = width
         self.isLandscape = isLandscape
+        self.showRemoveButton = showRemoveButton
+        self.onRemove = onRemove
         self.onSelect = onSelect
     }
     
@@ -34,11 +40,12 @@ public struct MediaCardView: View {
         }) {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .bottomLeading) {
-                    // Poster / Backdrop Image
+                    // Poster / Backdrop Image (always anchored to the top)
                     AsyncImageView(
                         url: isLandscape ? item.backdropURL : item.posterURL,
                         aspectRatio: isLandscape ? (16.0 / 9.0) : (2.0 / 3.0),
-                        contentMode: .fill
+                        contentMode: .fill,
+                        alignment: .top
                     )
                     
                     // Card Bottom Gradient
@@ -74,7 +81,7 @@ public struct MediaCardView: View {
                                     .font(.system(size: 8, weight: .black))
                                     .padding(.horizontal, 4)
                                     .padding(.vertical, 1.5)
-                                    .background(NetflixTheme.brandRed)
+                                    .background(HomeFlixTheme.brandRed)
                                     .cornerRadius(2)
                                     .foregroundColor(.white)
                             }
@@ -83,7 +90,7 @@ public struct MediaCardView: View {
                             
                             Text(item.displayYear)
                                 .font(.system(size: 9, weight: .medium))
-                                .foregroundColor(NetflixTheme.textSecondary)
+                                .foregroundColor(HomeFlixTheme.textSecondary)
                         }
                     }
                     .padding(6)
@@ -98,25 +105,51 @@ public struct MediaCardView: View {
                                         .fill(Color.white.opacity(0.3))
                                         .frame(height: 3)
                                     Rectangle()
-                                        .fill(NetflixTheme.brandRed)
+                                        .fill(HomeFlixTheme.brandRed)
                                         .frame(width: geo.size.width * CGFloat(p.percent / 100.0), height: 3)
                                 }
                             }
                             .frame(height: 3)
                         }
                     }
+                    
+                    // 1-Tap Remove Button (for My List Page)
+                    if showRemoveButton, let onRemove = onRemove {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button(action: onRemove) {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 26, height: 26)
+                                        .background(Circle().fill(Color.black.opacity(0.85)))
+                                        .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 1))
+                                        .shadow(color: .black.opacity(0.6), radius: 4)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .padding(6)
+                            }
+                            Spacer()
+                        }
+                    }
                 }
-                .frame(width: width, height: isLandscape ? (width * 9.0 / 16.0) : (width * 1.5))
-                .background(NetflixTheme.cardBackground)
+                .frame(width: width)
                 .cornerRadius(6)
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(NetflixTheme.border, lineWidth: 0.5)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                 )
             }
         }
-        .buttonStyle(PlainButtonStyle())
-        .scaleEffect(isPressed ? 0.96 : 1.0)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isPressed)
+        .buttonStyle(CardScaleButtonStyle())
+    }
+}
+
+public struct CardScaleButtonStyle: ButtonStyle {
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }

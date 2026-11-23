@@ -1,12 +1,18 @@
 import SwiftUI
 
-public struct NetflixPlayerControls: View {
+public struct HomeFlixPlayerControls: View {
     @ObservedObject var playerManager = DedicatedPlayerManager.shared
     @Binding var showAudioMenu: Bool
+    var safeAreaInsets: EdgeInsets = EdgeInsets()
     let onClose: () -> Void
     
-    public init(showAudioMenu: Binding<Bool>, onClose: @escaping () -> Void) {
+    public init(
+        showAudioMenu: Binding<Bool>,
+        safeAreaInsets: EdgeInsets = EdgeInsets(),
+        onClose: @escaping () -> Void
+    ) {
         self._showAudioMenu = showAudioMenu
+        self.safeAreaInsets = safeAreaInsets
         self.onClose = onClose
     }
     
@@ -33,7 +39,7 @@ public struct NetflixPlayerControls: View {
     
     public var body: some View {
         ZStack {
-            // Dark Netflix Cinematic Vignette Gradients
+            // Dark HomeFlix Vignette Gradients
             LinearGradient(
                 colors: [Color.black.opacity(0.88), Color.black.opacity(0.4), .clear],
                 startPoint: .top,
@@ -49,7 +55,7 @@ public struct NetflixPlayerControls: View {
             .allowsHitTesting(false)
             
             VStack(spacing: 0) {
-                // 1. TOP BAR
+                // 1. TOP BAR (Carefully padded below Dynamic Island / Notch and status bar)
                 HStack(spacing: 14) {
                     // Back button
                     Button(action: onClose) {
@@ -67,21 +73,9 @@ public struct NetflixPlayerControls: View {
                             .foregroundColor(.white)
                             .lineLimit(1)
                         
-                        HStack(spacing: 6) {
-                            Text(playerManager.activeItem?.category ?? "Streaming")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(NetflixTheme.textSecondary)
-                            
-                            if playerManager.isSampleMode {
-                                Text("VERIFIED 1080P")
-                                    .font(.system(size: 8, weight: .black))
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(Color(hex: "2E7D32"))
-                                    .cornerRadius(3)
-                                    .foregroundColor(.white)
-                            }
-                        }
+                        Text(playerManager.activeItem?.category ?? "Streaming")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(HomeFlixTheme.textSecondary)
                     }
                     
                     Spacer()
@@ -131,50 +125,48 @@ public struct NetflixPlayerControls: View {
                         .cornerRadius(6)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, max(20, safeAreaInsets.leading + 8))
+                .padding(.top, max(12, safeAreaInsets.top + 6))
                 
                 Spacer()
                 
                 // 2. CENTER PLAYBACK CONTROLS
-                if playerManager.playbackError == nil {
-                    HStack(spacing: 52) {
-                        // Rewind 10s
-                        Button(action: {
-                            playerManager.seek(by: -10)
-                        }) {
-                            VStack(spacing: 2) {
-                                Image(systemName: "gobackward.10")
-                                    .font(.system(size: 38, weight: .light))
-                                    .foregroundColor(.white)
-                            }
-                            .frame(width: 54, height: 54)
-                        }
-                        
-                        // Circular Play/Pause Toggle
-                        Button(action: {
-                            playerManager.togglePlayPause()
-                        }) {
-                            Image(systemName: playerManager.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 38))
+                HStack(spacing: 52) {
+                    // Rewind 10s
+                    Button(action: {
+                        playerManager.seek(by: -10)
+                    }) {
+                        VStack(spacing: 2) {
+                            Image(systemName: "gobackward.10")
+                                .font(.system(size: 38, weight: .light))
                                 .foregroundColor(.white)
-                                .frame(width: 76, height: 76)
-                                .background(Circle().fill(Color.black.opacity(0.65)))
-                                .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 1.5))
-                                .shadow(color: .black.opacity(0.6), radius: 10)
                         }
-                        
-                        // Forward 10s
-                        Button(action: {
-                            playerManager.seek(by: 10)
-                        }) {
-                            VStack(spacing: 2) {
-                                Image(systemName: "goforward.10")
-                                    .font(.system(size: 38, weight: .light))
-                                    .foregroundColor(.white)
-                            }
-                            .frame(width: 54, height: 54)
+                        .frame(width: 54, height: 54)
+                    }
+                    
+                    // Circular Play/Pause Toggle
+                    Button(action: {
+                        playerManager.togglePlayPause()
+                    }) {
+                        Image(systemName: playerManager.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 38))
+                            .foregroundColor(.white)
+                            .frame(width: 76, height: 76)
+                            .background(Circle().fill(Color.black.opacity(0.65)))
+                            .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 1.5))
+                            .shadow(color: .black.opacity(0.6), radius: 10)
+                    }
+                    
+                    // Forward 10s
+                    Button(action: {
+                        playerManager.seek(by: 10)
+                    }) {
+                        VStack(spacing: 2) {
+                            Image(systemName: "goforward.10")
+                                .font(.system(size: 38, weight: .light))
+                                .foregroundColor(.white)
                         }
+                        .frame(width: 54, height: 54)
                     }
                 }
                 
@@ -182,7 +174,7 @@ public struct NetflixPlayerControls: View {
                 
                 // 3. BOTTOM SCRUB BAR & MULTI-ACTION CONTROLS
                 VStack(spacing: 10) {
-                    // Netflix Scrub Timeline
+                    // HomeFlix Scrub Timeline
                     HStack(spacing: 12) {
                         Text(formatTime(playerManager.currentTime))
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
@@ -195,7 +187,7 @@ public struct NetflixPlayerControls: View {
                             ),
                             in: 0...max(1.0, playerManager.duration)
                         )
-                        .tint(NetflixTheme.brandRed)
+                        .tint(HomeFlixTheme.brandRed)
                         
                         // Tap to toggle total duration vs remaining time
                         Button(action: {
@@ -203,7 +195,7 @@ public struct NetflixPlayerControls: View {
                         }) {
                             Text(durationOrRemainingLabel)
                                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                                .foregroundColor(NetflixTheme.textSecondary)
+                                .foregroundColor(HomeFlixTheme.textSecondary)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 2)
                                 .background(Color.white.opacity(0.08))
@@ -211,7 +203,7 @@ public struct NetflixPlayerControls: View {
                         }
                     }
                     
-                    // Netflix Bottom Actions Bar
+                    // HomeFlix Bottom Actions Bar
                     HStack(spacing: 14) {
                         // Playback Speed Selector
                         Menu {
@@ -283,7 +275,7 @@ public struct NetflixPlayerControls: View {
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 9)
                                     .padding(.vertical, 6)
-                                    .background(NetflixTheme.brandRed)
+                                    .background(HomeFlixTheme.brandRed)
                                     .cornerRadius(5)
                                 }
                             }
@@ -291,24 +283,20 @@ public struct NetflixPlayerControls: View {
                         
                         Spacer()
                         
-                        // Instant Verified Test Stream Mode Toggle
+                        // Audio & Subtitles button
                         Button(action: {
-                            if playerManager.isSampleMode {
-                                playerManager.retryPlayback()
-                            } else {
-                                playerManager.playSampleStream()
-                            }
+                            showAudioMenu.toggle()
                         }) {
                             HStack(spacing: 4) {
-                                Image(systemName: playerManager.isSampleMode ? "antenna.radiowaves.left.and.right" : "play.circle")
-                                    .font(.system(size: 11))
-                                Text(playerManager.isSampleMode ? "Switch to BDIX" : "Test Sample")
+                                Image(systemName: "captions.bubble")
+                                    .font(.system(size: 12))
+                                Text("Audio & Subtitles")
                                     .font(.system(size: 11, weight: .bold))
                             }
-                            .foregroundColor(playerManager.isSampleMode ? Color(hex: "4ADE80") : .white)
+                            .foregroundColor(.white)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 6)
-                            .background(playerManager.isSampleMode ? Color(hex: "1F3D1F") : Color.white.opacity(0.16))
+                            .background(Color.white.opacity(0.16))
                             .cornerRadius(5)
                         }
                         
@@ -323,8 +311,8 @@ public struct NetflixPlayerControls: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 22)
+                .padding(.horizontal, max(20, safeAreaInsets.leading + 8))
+                .padding(.bottom, max(18, safeAreaInsets.bottom + 10))
             }
         }
     }

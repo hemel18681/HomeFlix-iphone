@@ -19,12 +19,13 @@ public struct BillboardHeroView: View {
     
     public var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // 1. Hero Backdrop Image
+            // 1. Hero Backdrop Image (anchored to the top)
             if let heroItem = item {
                 AsyncImageView(
                     url: heroItem.backdropURL,
                     aspectRatio: 16.0 / 10.0,
-                    contentMode: .fill
+                    contentMode: .fill,
+                    alignment: .top
                 )
             } else {
                 Rectangle()
@@ -33,9 +34,9 @@ public struct BillboardHeroView: View {
             }
             
             // 2. Triple Vignette Gradients
-            NetflixTheme.heroTopGradient
-            NetflixTheme.heroLeftGradient
-            NetflixTheme.heroBottomGradient
+            HomeFlixTheme.heroTopGradient
+            HomeFlixTheme.heroLeftGradient
+            HomeFlixTheme.heroBottomGradient
             
             // 3. Hero Metadata & Action Buttons
             if let hero = item {
@@ -50,7 +51,7 @@ public struct BillboardHeroView: View {
                                 .foregroundColor(.white)
                             Text("10")
                                 .font(.system(size: 10, weight: .black))
-                                .foregroundColor(NetflixTheme.brandRed)
+                                .foregroundColor(HomeFlixTheme.brandRed)
                         }
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2.5)
@@ -70,7 +71,7 @@ public struct BillboardHeroView: View {
                                 .font(.system(size: 9, weight: .heavy))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2.5)
-                                .background(NetflixTheme.brandRed)
+                                .background(HomeFlixTheme.brandRed)
                                 .cornerRadius(3)
                                 .foregroundColor(.white)
                         }

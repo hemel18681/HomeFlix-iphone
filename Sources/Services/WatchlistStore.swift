@@ -65,6 +65,12 @@ public final class WatchlistStore: ObservableObject {
         saveWatchlist()
     }
     
+    public func removeFromWatchlist(id: String) {
+        watchlist.remove(id)
+        watchlistItemMap.removeValue(forKey: id)
+        saveWatchlist()
+    }
+    
     public func isInWatchlist(_ id: String) -> Bool {
         watchlist.contains(id)
     }

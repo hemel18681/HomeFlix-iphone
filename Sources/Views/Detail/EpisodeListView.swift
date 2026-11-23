@@ -48,7 +48,7 @@ public struct EpisodeListView: View {
                                 .foregroundColor(.white)
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(NetflixTheme.textSecondary)
+                                .foregroundColor(HomeFlixTheme.textSecondary)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -88,7 +88,7 @@ public struct EpisodeListView: View {
                                             GeometryReader { geo in
                                                 ZStack(alignment: .leading) {
                                                     Rectangle().fill(Color.white.opacity(0.3)).frame(height: 2)
-                                                    Rectangle().fill(NetflixTheme.brandRed).frame(width: geo.size.width * CGFloat(p.percent / 100.0), height: 2)
+                                                    Rectangle().fill(HomeFlixTheme.brandRed).frame(width: geo.size.width * CGFloat(p.percent / 100.0), height: 2)
                                                 }
                                             }
                                             .frame(height: 2)
@@ -106,7 +106,7 @@ public struct EpisodeListView: View {
                                     if let size = ep.fileSize, !size.isEmpty {
                                         Text(size)
                                             .font(.system(size: 11, weight: .regular))
-                                            .foregroundColor(NetflixTheme.textMuted)
+                                            .foregroundColor(HomeFlixTheme.textMuted)
                                     }
                                 }
                                 
@@ -114,7 +114,7 @@ public struct EpisodeListView: View {
                                 
                                 Image(systemName: "arrow.down.to.line")
                                     .font(.system(size: 13))
-                                    .foregroundColor(NetflixTheme.textSecondary)
+                                    .foregroundColor(HomeFlixTheme.textSecondary)
                                     .padding(.trailing, 8)
                             }
                             .padding(.horizontal, 16)

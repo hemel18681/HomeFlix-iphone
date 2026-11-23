@@ -176,100 +176,46 @@ public struct DedicatedPlayerView: View {
                     .allowsHitTesting(false)
                 }
                 
-                // 4. Buffering Indicator
-                if playerManager.isBuffering && playerManager.playbackError == nil {
+                // 4. Subtle HomeFlix Buffering Spinner
+                if playerManager.isBuffering {
                     VStack(spacing: 14) {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: NetflixTheme.brandRed))
-                            .scaleEffect(1.6)
-                        
-                        Text("Connecting to High-Speed Stream...")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
-                            .shadow(color: .black, radius: 4)
+                            .progressViewStyle(CircularProgressViewStyle(tint: HomeFlixTheme.brandRed))
+                            .scaleEffect(1.5)
                     }
-                    .padding(20)
-                    .background(Color.black.opacity(0.65).cornerRadius(12))
+                    .allowsHitTesting(false)
                 }
                 
-                // 5. Playback Error & Recovery Screen (100% In-App)
-                if let errorMsg = playerManager.playbackError {
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 44))
-                            .foregroundColor(NetflixTheme.brandRed)
-                        
-                        Text("Stream Playback Alert")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text(errorMsg)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(Color(hex: "CCCCCC"))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(3)
-                            .padding(.horizontal, 24)
-                        
-                        // In-App Action Buttons
-                        VStack(spacing: 10) {
-                            Button(action: {
-                                playerManager.playSampleStream()
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "play.fill")
-                                        .font(.system(size: 13))
-                                    Text("▶ Play Test Video (Verify In-App Player)")
-                                        .font(.system(size: 13, weight: .semibold))
-                                }
-                                .foregroundColor(Color(hex: "4ADE80"))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color(hex: "1A2E1A"))
-                                .cornerRadius(6)
-                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(hex: "2E7D32"), lineWidth: 1))
-                            }
-                            
-                            HStack(spacing: 12) {
-                                Button(action: {
-                                    playerManager.retryPlayback()
-                                }) {
-                                    Text("🔄 Retry Stream")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(NetflixTheme.brandRed)
-                                        .cornerRadius(6)
-                                }
-                                
-                                Button(action: {
-                                    playerManager.close()
-                                }) {
-                                    Text("✕ Close Player")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(Color(hex: "333333"))
-                                        .cornerRadius(6)
-                                }
-                            }
+                // 5. Clean Non-Intrusive Status Toast
+                if let toast = playerManager.statusToast {
+                    VStack {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(HomeFlixTheme.brandRed)
+                            Text(toast)
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 4)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(Color(hex: "181818").opacity(0.92))
+                                .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                        )
+                        .padding(.top, max(54, proxy.safeAreaInsets.top + 10))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        Spacer()
                     }
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: 440)
-                    .background(Color(hex: "181818").cornerRadius(14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "333333"), lineWidth: 1))
-                    .shadow(color: .black.opacity(0.8), radius: 25)
-                    .padding(.horizontal, 20)
+                    .allowsHitTesting(false)
                 }
                 
-                // 6. Netflix On-Screen Interactive Controls
+                // 6. HomeFlix On-Screen Interactive Controls
                 if playerManager.showControls && !playerManager.isLocked {
-                    NetflixPlayerControls(
+                    HomeFlixPlayerControls(
                         showAudioMenu: $showAudioMenu,
+                        safeAreaInsets: proxy.safeAreaInsets,
                         onClose: {
                             playerManager.close()
                         }
@@ -277,7 +223,77 @@ public struct DedicatedPlayerView: View {
                     .transition(.opacity)
                 }
                 
-                // 7. Screen Locked State Floating Unlock Pill
+                // 7. Skip Intro Floating Button (All Content)
+                if playerManager.showSkipIntro && !playerManager.isLocked {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                playerManager.skipIntro()
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "forward.fill")
+                                        .font(.system(size: 13, weight: .bold))
+                                    Text("Skip Intro")
+                                        .font(.system(size: 13, weight: .bold))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.black.opacity(0.75))
+                                .cornerRadius(6)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.4), lineWidth: 1))
+                            }
+                            .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
+                            .padding(.bottom, max(34, proxy.safeAreaInsets.bottom + (playerManager.showControls ? 95 : 24)))
+                            .transition(.opacity.combined(with: .scale))
+                        }
+                    }
+                }
+                
+                // 8. Next Episode End-Credits Prompt (Series)
+                if playerManager.showNextEpisodePrompt && !playerManager.isLocked, let nextEp = playerManager.nextEpisodeInfo {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                playerManager.playNextEpisode()
+                            }) {
+                                HStack(spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("NEXT EPISODE")
+                                            .font(.system(size: 9, weight: .black))
+                                            .foregroundColor(HomeFlixTheme.brandRed)
+                                        Text("S\(nextEp.seasonNumber):E\(nextEp.episode.episodeNumber) \"\(nextEp.episode.title)\"")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .lineLimit(1)
+                                    }
+                                    
+                                    Image(systemName: "forward.end.fill")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(8)
+                                        .background(HomeFlixTheme.brandRed)
+                                        .cornerRadius(6)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "181818").opacity(0.92))
+                                .cornerRadius(8)
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                .shadow(color: .black.opacity(0.6), radius: 10)
+                            }
+                            .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
+                            .padding(.bottom, max(34, proxy.safeAreaInsets.bottom + (playerManager.showControls ? 95 : 24)))
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+                    }
+                }
+                
+                // 9. Screen Locked State Floating Unlock Pill
                 if playerManager.isLocked && playerManager.showLockControlsHint {
                     VStack {
                         Spacer()
@@ -300,12 +316,12 @@ public struct DedicatedPlayerView: View {
                             )
                             .shadow(color: .black.opacity(0.8), radius: 16)
                         }
-                        .padding(.bottom, 48)
+                        .padding(.bottom, max(48, proxy.safeAreaInsets.bottom + 24))
                         .transition(.opacity.combined(with: .scale))
                     }
                 }
                 
-                // 8. In-Player Episodes Sheet Drawer (Slide up / modal)
+                // 10. In-Player Episodes Sheet Drawer (Slide up / modal)
                 if playerManager.showEpisodesSheet {
                     Color.black.opacity(0.65)
                         .edgesIgnoringSafeArea(.all)
@@ -323,7 +339,7 @@ public struct DedicatedPlayerView: View {
                     .transition(.move(edge: .bottom))
                 }
                 
-                // 9. Audio & Subtitles Menu Overlay
+                // 11. Audio & Subtitles Menu Overlay
                 if showAudioMenu {
                     Color.black.opacity(0.65)
                         .edgesIgnoringSafeArea(.all)
@@ -341,9 +357,14 @@ public struct DedicatedPlayerView: View {
         .animation(.easeInOut(duration: 0.22), value: playerManager.showControls)
         .animation(.easeInOut(duration: 0.22), value: playerManager.isLocked)
         .animation(.easeInOut(duration: 0.22), value: playerManager.showLockControlsHint)
+        .animation(.easeInOut(duration: 0.22), value: playerManager.showSkipIntro)
+        .animation(.easeInOut(duration: 0.22), value: playerManager.showNextEpisodePrompt)
         .animation(.easeInOut(duration: 0.22), value: playerManager.rippleState != nil)
         .animation(.easeInOut(duration: 0.25), value: playerManager.showEpisodesSheet)
         .animation(.easeInOut(duration: 0.22), value: showAudioMenu)
-        .animation(.easeInOut(duration: 0.22), value: playerManager.playbackError != nil)
+        .animation(.easeInOut(duration: 0.22), value: playerManager.statusToast != nil)
+        .animation(.easeInOut(duration: 0.22), value: playerManager.isBuffering)
+        .statusBar(hidden: !playerManager.showControls)
+        .persistentSystemOverlays(playerManager.showControls ? .visible : .hidden)
     }
 }

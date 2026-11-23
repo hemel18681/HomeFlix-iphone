@@ -1,6 +1,6 @@
 # HomeFlix Mobile — Pure Native Standalone iOS Application (Swift & SwiftUI)
 
-A native iOS application engineered with **Swift 5.9+** and **SwiftUI** for Apple macOS and Xcode. It mirrors the authentic Netflix streaming UI and delivers playback of all video formats directly from local BDIX networks without server dependencies or WebKit browser engine restrictions.
+A native iOS application engineered with **Swift 5.9+** and **SwiftUI** for Apple macOS and Xcode. It provides an authentic streaming UI and delivers playback of all video formats directly from local BDIX networks without server dependencies or WebKit browser engine restrictions.
 
 ---
 
@@ -15,22 +15,27 @@ A native iOS application engineered with **Swift 5.9+** and **SwiftUI** for Appl
 - **No Browser Engine Restrictions:** Bypasses iOS Safari/WebKit constraints which block `.mkv` containers and Dolby Digital multi-channel AC3 dual-audio.
 - **Hardware-Accelerated Apple Decoders:** High-throughput streaming via AVFoundation with automatic buffer pre-caching.
 - **Full App Transport Security (ATS) Exemption:** Configured in `Info.plist` (`NSAllowsArbitraryLoads` and `NSAllowsLocalNetworking`) so your iPhone can stream directly from local BDIX server IPs (`http://172.16.50.4/...` and `http://172.16.50.7/...`) over home Wi-Fi.
-- **Authentic Netflix Player UI:**
+- **Authentic HomeFlix Player UI:**
   - Center 10-second skip backward / forward buttons and circular Play/Pause toggle.
-  - Top navigation bar with media title, season/episode details, and audio & subtitle switcher.
-  - Bottom scrub bar in Netflix Red (`#E50914`) with elapsed time and duration timestamps.
+  - Safe area clearance avoiding notch / Dynamic Island and status bar in portrait and landscape.
+  - Skip Intro button (4s–85s) and Next Episode prompt card for seamless binge watching.
+  - Top navigation bar with media title, season/episode details, lock, and audio & subtitle switcher.
+  - Bottom scrub bar in HomeFlix Red (`#E50914`) with elapsed time and duration timestamps.
   - Playback speed adjustment (0.75x, 1.0x, 1.25x, 1.5x).
   - Landscape auto-lock orientation.
   - Multi-track dual-audio selector (Original 5.1, Hindi 5.1, English Stereo).
-  - Pure in-app universal decoding for all containers (MKV, MP4, HLS) and audio tracks directly on-screen.
+  - Pure in-app universal decoding for all containers (MKV, MP4, HLS) and audio tracks directly on-screen with zero disruptive alerts.
 
-### 3. Exact Netflix UI Replica (Pixel-for-Pixel)
+### 3. Dedicated Pages & Visual Quality
+- **Dedicated Tab Pages:** Dedicated pages for Home, TV Shows, Movies, Anime, and My List with specialized sub-filter chips.
+- **My List 1-Tap Card Removal:** Direct `✕` button on every card in the dedicated My List 3-column grid for 1-tap watchlist removal.
+- **Top-Anchored Posters:** Card artwork aligned to `object-cover object-top` ensuring faces and titles are never cropped.
 - **Palette & Dark Aesthetic:** Background `#141414`, Card Surface `#181818`, Accents `#E50914`.
 - **Billboard Hero:** 16:9 widescreen backdrop with triple vignette gradients (top, left, bottom), Top 10 badges, 4K/1080p indicators, Dual Audio badges, Play, and More Info actions.
-- **Top 10 Numbered Rows:** Giant stylized Netflix numbered outline badges (#1 to #10) nestled beside each poster card.
+- **Top 10 Numbered Rows:** Giant stylized numbered outline badges (#1 to #10) nestled beside each poster card.
 - **18-Category Personalization Engine:** Multi-select taste profile sheet that dynamically elevates matching rows to the top of your feed with personalized badges.
 - **Slide-up Detail Sheet:** Full synopsis, season/episode picker with file size & duration, and "More Like This" recommendation grid.
-- **Instant Search:** Dynamic 3-column Netflix grid with category filtering chips.
+- **Instant Search:** Dynamic 3-column grid with category filtering chips.
 
 ---
 
@@ -49,7 +54,7 @@ mobile-app/
 │   │   ├── series-episodes.json     # TV and Anime series season & episode trees
 │   │   └── search-index.json        # 37,000+ searchable catalog index
 │   ├── Theme/
-│   │   └── NetflixTheme.swift       # Netflix colors, gradients, and typography
+│   │   └── HomeFlixTheme.swift      # HomeFlix colors, gradients, and typography
 │   ├── Models/
 │   │   ├── MediaItem.swift          # Media item, quality, and metadata
 │   │   ├── SeasonEpisode.swift      # Season, Episode, and SeriesDetail models
@@ -64,12 +69,12 @@ mobile-app/
 │       ├── Root/
 │       │   └── ContentView.swift    # Master navigation & overlay coordinator
 │       ├── Navigation/
-│       │   └── NetflixNavbarView.swift # Netflix logo, tabs, search & taste buttons
+│       │   └── HomeFlixNavbarView.swift # HomeFlix logo, tabs, search & taste buttons
 │       ├── Home/
-│       │   ├── HomeFeedView.swift   # Main vertical scrolling feed
+│       │   ├── HomeFeedView.swift   # Main vertical scrolling feed with dedicated tab pages
 │       │   ├── BillboardHeroView.swift # 16:9 Billboard hero with vignettes
 │       │   ├── ContentRowView.swift # Horizontal scrolling carousel row
-│       │   ├── MediaCardView.swift  # Netflix card with progress & badges
+│       │   ├── MediaCardView.swift  # HomeFlix card with progress & badges
 │       │   └── Top10RankBadge.swift # Giant outline numbers (#1 - #10)
 │       ├── Detail/
 │       │   ├── DetailSheetView.swift # Slide-up detail sheet
@@ -77,7 +82,7 @@ mobile-app/
 │       │   └── MoreLikeThisGridView.swift # Similar titles recommendation grid
 │       ├── Player/
 │       │   ├── DedicatedPlayerView.swift # Fullscreen dedicated player
-│       │   ├── NetflixPlayerControls.swift # Netflix on-screen playback controls
+│       │   ├── HomeFlixPlayerControls.swift # HomeFlix on-screen playback controls
 │       │   └── AudioSubtitleMenu.swift # Multi-track audio & subtitle selector
 │       ├── Search/
 │       │   └── SearchModalView.swift # Real-time instant search modal

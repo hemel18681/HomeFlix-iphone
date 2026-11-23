@@ -14,7 +14,7 @@ public struct AudioSubtitleMenu: View {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "waveform")
-                        .foregroundColor(NetflixTheme.brandRed)
+                        .foregroundColor(HomeFlixTheme.brandRed)
                     Text("Audio & Subtitles")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
@@ -40,7 +40,7 @@ public struct AudioSubtitleMenu: View {
                     Text("AUDIO STREAM")
                         .font(.system(size: 11, weight: .heavy))
                         .tracking(1.2)
-                        .foregroundColor(NetflixTheme.textMuted)
+                        .foregroundColor(HomeFlixTheme.textMuted)
                     
                     ForEach(playerManager.audioTracks, id: \.self) { track in
                         Button(action: {
@@ -50,13 +50,13 @@ public struct AudioSubtitleMenu: View {
                                 if playerManager.selectedAudioTrack == track {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(NetflixTheme.brandRed)
+                                        .foregroundColor(HomeFlixTheme.brandRed)
                                 } else {
                                     Color.clear.frame(width: 12, height: 12)
                                 }
                                 Text(track)
                                     .font(.system(size: 14, weight: playerManager.selectedAudioTrack == track ? .bold : .regular))
-                                    .foregroundColor(playerManager.selectedAudioTrack == track ? .white : NetflixTheme.textSecondary)
+                                    .foregroundColor(playerManager.selectedAudioTrack == track ? .white : HomeFlixTheme.textSecondary)
                             }
                         }
                     }
@@ -68,7 +68,7 @@ public struct AudioSubtitleMenu: View {
                     Text("SUBTITLES")
                         .font(.system(size: 11, weight: .heavy))
                         .tracking(1.2)
-                        .foregroundColor(NetflixTheme.textMuted)
+                        .foregroundColor(HomeFlixTheme.textMuted)
                     
                     ForEach(playerManager.subtitleTracks, id: \.self) { sub in
                         Button(action: {
@@ -78,13 +78,13 @@ public struct AudioSubtitleMenu: View {
                                 if playerManager.selectedSubtitleTrack == sub {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(NetflixTheme.brandRed)
+                                        .foregroundColor(HomeFlixTheme.brandRed)
                                 } else {
                                     Color.clear.frame(width: 12, height: 12)
                                 }
                                 Text(sub)
                                     .font(.system(size: 14, weight: playerManager.selectedSubtitleTrack == sub ? .bold : .regular))
-                                    .foregroundColor(playerManager.selectedSubtitleTrack == sub ? .white : NetflixTheme.textSecondary)
+                                    .foregroundColor(playerManager.selectedSubtitleTrack == sub ? .white : HomeFlixTheme.textSecondary)
                             }
                         }
                     }
@@ -97,10 +97,10 @@ public struct AudioSubtitleMenu: View {
             HStack(spacing: 8) {
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 12))
-                    .foregroundColor(NetflixTheme.brandRed)
+                    .foregroundColor(HomeFlixTheme.brandRed)
                 Text("Dolby Digital 5.1 & Multi-Track Hardware Decoding Active")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(NetflixTheme.textSecondary)
+                    .foregroundColor(HomeFlixTheme.textSecondary)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)

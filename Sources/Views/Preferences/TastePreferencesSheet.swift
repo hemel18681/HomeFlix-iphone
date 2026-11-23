@@ -21,9 +21,9 @@ public struct TastePreferencesSheet: View {
                     Text("Personalize Your Feed")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Select categories you love to tailor your Netflix rows.")
+                    Text("Select categories you love to tailor your HomeFlix rows.")
                         .font(.system(size: 12))
-                        .foregroundColor(NetflixTheme.textSecondary)
+                        .foregroundColor(HomeFlixTheme.textSecondary)
                 }
                 
                 Spacer()
@@ -60,7 +60,7 @@ public struct TastePreferencesSheet: View {
                                 
                                 if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(NetflixTheme.brandRed)
+                                        .foregroundColor(HomeFlixTheme.brandRed)
                                         .font(.system(size: 16))
                                 } else {
                                     Circle()
@@ -74,7 +74,7 @@ public struct TastePreferencesSheet: View {
                             .cornerRadius(8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(isSelected ? NetflixTheme.brandRed : Color(hex: "333333"), lineWidth: 1)
+                                    .stroke(isSelected ? HomeFlixTheme.brandRed : Color(hex: "333333"), lineWidth: 1)
                             )
                         }
                     }
@@ -90,12 +90,12 @@ public struct TastePreferencesSheet: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(NetflixTheme.brandRed)
+                    .background(HomeFlixTheme.brandRed)
                     .cornerRadius(6)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
         }
-        .background(NetflixTheme.background)
+        .background(HomeFlixTheme.background)
     }
 }
