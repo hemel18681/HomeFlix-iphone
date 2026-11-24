@@ -7,13 +7,13 @@
     <key>CFBundleDisplayName</key>
     <string>HomeFlix</string>
     <key>CFBundleExecutable</key>
-    <string>HomeFlix</string>
+    <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
     <string>com.homeflix.ios</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>HomeFlix</string>
+    <string>$(PRODUCT_NAME)</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -34,13 +34,10 @@
         <string>audio</string>
     </array>
     <key>UILaunchScreen</key>
-    <dict>
-        <key>UIColorName</key>
-        <string>#141414</string>
-    </dict>
+    <dict/>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
-        <string>arm64</string>
+        <string>armv7</string>
     </array>
     <key>UISupportedInterfaceOrientations</key>
     <array>

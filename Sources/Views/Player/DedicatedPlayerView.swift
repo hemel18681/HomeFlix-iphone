@@ -48,35 +48,6 @@ public class PlayerUIView: UIView {
 }
 #endif
 
-#if canImport(KSPlayer)
-import KSPlayer
-
-public struct KSPlayerRepresentable: UIViewRepresentable {
-    public let url: URL
-    public let aspectMode: AspectMode
-    
-    public init(url: URL, aspectMode: AspectMode = .fit) {
-        self.url = url
-        self.aspectMode = aspectMode
-    }
-    
-    public func makeUIView(context: Context) -> KSVideoPlayerView {
-        let options = KSOptions()
-        KSOptions.secondPlayerType = KSMEPlayer.self
-        let playerView = KSVideoPlayerView(url: url, options: options)
-        playerView.contentMode = (aspectMode == .fill) ? .scaleAspectFill : .scaleAspectFit
-        return playerView
-    }
-    
-    public func updateUIView(_ uiView: KSVideoPlayerView, context: Context) {
-        if uiView.url != url {
-            uiView.set(url: url)
-        }
-        uiView.contentMode = (aspectMode == .fill) ? .scaleAspectFill : .scaleAspectFit
-    }
-}
-#endif
-
 public struct DedicatedPlayerView: View {
     @ObservedObject var playerManager = DedicatedPlayerManager.shared
     @State private var showAudioMenu: Bool = false
@@ -86,17 +57,11 @@ public struct DedicatedPlayerView: View {
     public var body: some View {
         GeometryReader { proxy in
             ZStack {
-                // Absolute Solid Black Background
+                // Absolute Solid Black Background (Zero white-screen flash)
                 Color.black
                     .edgesIgnoringSafeArea(.all)
                 
-                // 1. Universal In-App Video Rendering Layer
-                #if canImport(KSPlayer)
-                if let streamUrl = playerManager.resolvedStreamURL {
-                    KSPlayerRepresentable(url: streamUrl, aspectMode: playerManager.aspectMode)
-                        .edgesIgnoringSafeArea(.all)
-                }
-                #else
+                // 1. Universal Hardware-Accelerated In-App Video Rendering Layer
                 if let p = playerManager.player {
                     #if canImport(UIKit)
                     PlayerViewRepresentable(player: p, aspectMode: playerManager.aspectMode)
@@ -106,7 +71,6 @@ public struct DedicatedPlayerView: View {
                         .edgesIgnoringSafeArea(.all)
                     #endif
                 }
-                #endif
                 
                 // 2. Gesture Handling Layer (Double-tap Seek & Single-tap Controls)
                 HStack(spacing: 0) {

@@ -7,10 +7,6 @@ import AVFoundation
 import UIKit
 #endif
 
-#if canImport(KSPlayer)
-import KSPlayer
-#endif
-
 public enum AspectMode: String, CaseIterable {
     case fit = "Fit"
     case fill = "Fill"
@@ -83,12 +79,7 @@ public final class DedicatedPlayerManager: ObservableObject {
     
     public static let verifiedSampleStreamURL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
     
-    public init() {
-        #if canImport(KSPlayer)
-        KSOptions.secondPlayerType = KSMEPlayer.self
-        KSOptions.isAutoPlay = true
-        #endif
-    }
+    public init() {}
     
     public var currentTitle: String {
         guard let item = activeItem else { return "HomeFlix Video" }
@@ -110,14 +101,26 @@ public final class DedicatedPlayerManager: ObservableObject {
     }
     
     public var resolvedStreamURL: URL? {
-        guard let raw = rawStreamURLString else { return nil }
-        if let direct = URL(string: raw) {
+        guard let raw = rawStreamURLString?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
+        
+        // 1. Direct standard URL initialization
+        if let direct = URL(string: raw), direct.scheme != nil {
             return direct
         }
-        if let encoded = raw.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+        
+        // 2. URLComponents parsing
+        if let components = URLComponents(string: raw), let compUrl = components.url {
+            return compUrl
+        }
+        
+        // 3. Fallback character set encoding for unescaped characters
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.insert(charactersIn: ":/?#[]@!$&'()*+,;=")
+        if let encoded = raw.addingPercentEncoding(withAllowedCharacters: allowed),
            let url = URL(string: encoded) {
             return url
         }
+        
         return nil
     }
     
