@@ -13,11 +13,15 @@ let package = Package(
             targets: ["HomeFlix"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/kingslay/KSPlayer.git", branch: "main")
+    ],
     targets: [
         .executableTarget(
             name: "HomeFlix",
-            dependencies: [],
+            dependencies: [
+                .product(name: "KSPlayer", package: "KSPlayer")
+            ],
             path: "Sources",
             resources: [
                 .process("Resources"),

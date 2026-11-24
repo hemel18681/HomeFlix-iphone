@@ -7,6 +7,10 @@ import AVFoundation
 import UIKit
 #endif
 
+#if canImport(KSPlayer)
+import KSPlayer
+#endif
+
 public enum AspectMode: String, CaseIterable {
     case fit = "Fit"
     case fill = "Fill"
@@ -64,8 +68,9 @@ public final class DedicatedPlayerManager: ObservableObject {
     @Published public var subtitleTracks: [String] = ["Off", "English [CC]"]
     @Published public var selectedSubtitleTrack: String = "English [CC]"
     
-    // Native AVPlayer reference & Timers
+    // Native AVPlayer & Engine references
     public private(set) var player: AVPlayer?
+    public weak var activeKSPlayerLayer: AnyObject?
     private var timeObserverToken: Any?
     private var hideControlsTimer: Timer?
     private var watchdogTimer: Timer?
@@ -74,12 +79,20 @@ public final class DedicatedPlayerManager: ObservableObject {
     private var toastTimer: Timer?
     private var statusObserver: NSKeyValueObservation?
     private var bufferObserver: NSKeyValueObservation?
-    private var pendingResumeTime: Double? = nil
+    public var pendingResumeTime: Double? = nil
     private var lastPersistTime: Double = 0
     
     public static let verifiedSampleStreamURL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
     
-    public init() {}
+    public init() {
+        #if canImport(KSPlayer)
+        KSOptions.firstPlayerType = KSMEPlayer.self
+        KSOptions.secondPlayerType = KSMEPlayer.self
+        KSOptions.isHardwareDecode = true
+        KSOptions.isAutoPlay = true
+        KSOptions.isSeekedAutoPlay = true
+        #endif
+    }
     
     public var currentTitle: String {
         guard let item = activeItem else { return "HomeFlix Video" }
@@ -234,9 +247,13 @@ public final class DedicatedPlayerManager: ObservableObject {
         try? AVAudioSession.sharedInstance().setActive(true)
         #endif
         
-        let isMkv = streamUrl.pathExtension.lowercased() == "mkv"
-        let isPrivateBDIX = streamUrl.host?.contains("172.16.") == true || streamUrl.host?.hasPrefix("10.") == true
-        
+        #if canImport(KSPlayer)
+        KSOptions.firstPlayerType = KSMEPlayer.self
+        KSOptions.secondPlayerType = KSMEPlayer.self
+        KSOptions.isHardwareDecode = true
+        KSOptions.isAutoPlay = true
+        KSOptions.isSeekedAutoPlay = true
+        #else
         let playerItem = AVPlayerItem(url: streamUrl)
         let newPlayer = AVPlayer(playerItem: playerItem)
         newPlayer.automaticallyWaitsToMinimizeStalling = true
@@ -286,17 +303,6 @@ public final class DedicatedPlayerManager: ObservableObject {
             }
         }
         
-        // Watchdog: If private BDIX node is unreachable outside home Wi-Fi,
-        // transition seamlessly after 2.5 seconds without blocking the UI
-        watchdogTimer = Timer.scheduledTimer(withTimeInterval: (isMkv || isPrivateBDIX) ? 2.5 : 5.0, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                if self.isBuffering && (self.player?.currentItem?.status != .readyToPlay) {
-                    self.transitionToResilientStream()
-                }
-            }
-        }
-        
         // Periodic time observer
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         self.timeObserverToken = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
@@ -308,16 +314,23 @@ public final class DedicatedPlayerManager: ObservableObject {
                     self.duration = dur
                 }
             }
-            
-            // Auto-advance to next episode when current episode finishes
             if self.duration > 0 && self.currentTime >= (self.duration - 1.5) && self.hasNextEpisode {
                 self.playNextEpisode()
             }
-            
             self.persistProgress()
         }
-        
         newPlayer.play()
+        #endif
+        
+        // High-resilience Network Watchdog (12s threshold - never prematurely kills healthy buffering)
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                if self.isBuffering && self.duration == 0 && self.currentTime == 0 {
+                    self.transitionToResilientStream()
+                }
+            }
+        }
     }
     
     // Transparent, zero-error transition to high-speed stream pipeline
@@ -380,6 +393,12 @@ public final class DedicatedPlayerManager: ObservableObject {
     }
     
     private func cleanPlayer() {
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            ks.pause()
+            activeKSPlayerLayer = nil
+        }
+        #endif
         watchdogTimer?.invalidate()
         watchdogTimer = nil
         statusObserver?.invalidate()
@@ -404,6 +423,20 @@ public final class DedicatedPlayerManager: ObservableObject {
     
     public func togglePlayPause() {
         if isLocked { return }
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            if isPlaying {
+                ks.pause()
+                isPlaying = false
+                persistProgress(force: true)
+            } else {
+                ks.play()
+                isPlaying = true
+            }
+            resetHideControlsTimer()
+            return
+        }
+        #endif
         guard let p = player else { return }
         if isPlaying {
             p.pause()
@@ -418,21 +451,29 @@ public final class DedicatedPlayerManager: ObservableObject {
     }
     
     public func seek(by delta: Double) {
-        if isLocked { return }
-        guard let p = player else { return }
-        let target = max(0, min(duration, currentTime + delta))
-        let time = CMTime(seconds: target, preferredTimescale: 600)
-        p.seek(to: time)
-        currentTime = target
-        resetHideControlsTimer()
+        seek(to: currentTime + delta)
     }
     
     public func seek(to targetSeconds: Double) {
         if isLocked { return }
+        let target = max(0, min(duration > 0 ? duration : targetSeconds, targetSeconds))
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            let time = CMTime(seconds: target, preferredTimescale: 600)
+            ks.seek(time: time) { [weak self] _ in
+                Task { @MainActor in
+                    self?.currentTime = target
+                }
+            }
+            currentTime = target
+            resetHideControlsTimer()
+            return
+        }
+        #endif
         guard let p = player else { return }
-        let time = CMTime(seconds: targetSeconds, preferredTimescale: 600)
+        let time = CMTime(seconds: target, preferredTimescale: 600)
         p.seek(to: time)
-        currentTime = targetSeconds
+        currentTime = target
         resetHideControlsTimer()
     }
     
@@ -453,6 +494,12 @@ public final class DedicatedPlayerManager: ObservableObject {
     public func setSpeed(_ speed: Float) {
         if isLocked { return }
         playbackSpeed = speed
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            ks.playbackRate = speed
+            return
+        }
+        #endif
         if isPlaying {
             player?.rate = speed
         }
@@ -460,7 +507,32 @@ public final class DedicatedPlayerManager: ObservableObject {
     
     public func toggleMute() {
         isMuted.toggle()
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            ks.player?.isMuted = isMuted
+            return
+        }
+        #endif
         player?.isMuted = isMuted
+    }
+    
+    public func updatePeriodicProgress() {
+        if duration > 0 && currentTime >= (duration - 1.5) && hasNextEpisode {
+            playNextEpisode()
+        }
+        persistProgress()
+    }
+    
+    public func formatTime(_ seconds: Double) -> String {
+        guard !seconds.isNaN && seconds >= 0 else { return "00:00" }
+        let s = Int(seconds)
+        let hrs = s / 3600
+        let mins = (s % 3600) / 60
+        let secs = s % 60
+        if hrs > 0 {
+            return String(format: "%d:%02d:%02d", hrs, mins, secs)
+        }
+        return String(format: "%02d:%02d", mins, secs)
     }
     
     public func toggleScreenLock() {

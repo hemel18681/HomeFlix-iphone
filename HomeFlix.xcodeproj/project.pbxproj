@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		HF0000000000C32 /* KSPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = HF0000000000C31 /* KSPlayer */; };
 		HF0000000000BBA /* HomeFlixApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000BB9 /* HomeFlixApp.swift */; };
 		HF0000000000BBC /* CategoryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000BBB /* CategoryRow.swift */; };
 		HF0000000000BBE /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = HF0000000000BBD /* MediaItem.swift */; };
@@ -89,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				HF0000000000C32 /* KSPlayer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,6 +276,9 @@
 			dependencies = (
 			);
 			name = HomeFlix;
+			packageProductDependencies = (
+				HF0000000000C31 /* KSPlayer */,
+			);
 			productName = HomeFlix;
 			productReference = HF0000000000BFE /* HomeFlix.app */;
 			productType = "com.apple.product-type.application";
@@ -302,6 +307,9 @@
 				Base,
 			);
 			mainGroup = HF0000000000C01;
+			packageReferences = (
+				HF0000000000C30 /* XCRemoteSwiftPackageReference "KSPlayer" */,
+			);
 			productRefGroup = HF0000000000C02 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -477,6 +485,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		HF0000000000C30 /* XCRemoteSwiftPackageReference "KSPlayer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kingslay/KSPlayer.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		HF0000000000C31 /* KSPlayer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = HF0000000000C30 /* XCRemoteSwiftPackageReference "KSPlayer" */;
+			productName = KSPlayer;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = HF0000000000C00 /* Project object */;
 }

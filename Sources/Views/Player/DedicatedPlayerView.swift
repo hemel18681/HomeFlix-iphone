@@ -48,6 +48,120 @@ public class PlayerUIView: UIView {
 }
 #endif
 
+#if canImport(KSPlayer)
+import KSPlayer
+#if canImport(KSPlayerUI)
+import KSPlayerUI
+#endif
+
+public struct KSPlayerRepresentable: UIViewRepresentable {
+    public let url: URL
+    public let aspectMode: AspectMode
+    
+    public init(url: URL, aspectMode: AspectMode = .fit) {
+        self.url = url
+        self.aspectMode = aspectMode
+    }
+    
+    public func makeUIView(context: Context) -> IOSVideoPlayerView {
+        let options = KSOptions()
+        KSOptions.firstPlayerType = KSMEPlayer.self
+        KSOptions.secondPlayerType = KSMEPlayer.self
+        KSOptions.isHardwareDecode = true
+        KSOptions.isAutoPlay = true
+        KSOptions.isSeekedAutoPlay = true
+        
+        let playerView = IOSVideoPlayerView()
+        playerView.toolBar.isHidden = true
+        playerView.navigationBar.isHidden = true
+        playerView.set(url: url, options: options)
+        playerView.contentMode = (aspectMode == .fill) ? .scaleAspectFill : .scaleAspectFit
+        context.coordinator.setup(playerView: playerView)
+        return playerView
+    }
+    
+    public func updateUIView(_ uiView: IOSVideoPlayerView, context: Context) {
+        uiView.toolBar.isHidden = true
+        uiView.navigationBar.isHidden = true
+        if uiView.url != url {
+            let options = KSOptions()
+            KSOptions.firstPlayerType = KSMEPlayer.self
+            KSOptions.secondPlayerType = KSMEPlayer.self
+            uiView.set(url: url, options: options)
+        }
+        uiView.contentMode = (aspectMode == .fill) ? .scaleAspectFill : .scaleAspectFit
+    }
+    
+    public func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    public class Coordinator: NSObject, PlayerControllerDelegate {
+        weak var playerView: IOSVideoPlayerView?
+        
+        func setup(playerView: IOSVideoPlayerView) {
+            self.playerView = playerView
+            playerView.delegate = self
+            DedicatedPlayerManager.shared.activeKSPlayerLayer = playerView.playerLayer
+        }
+        
+        public func playerController(state: KSPlayerState) {
+            Task { @MainActor in
+                let manager = DedicatedPlayerManager.shared
+                switch state {
+                case .readyToPlay:
+                    manager.isBuffering = false
+                    if let dur = playerView?.playerLayer.player?.duration, dur > 0 {
+                        manager.duration = dur
+                    }
+                    if let resume = manager.pendingResumeTime, resume > 2.0 {
+                        let target = CMTime(seconds: resume, preferredTimescale: 600)
+                        playerView?.playerLayer.seek(time: target) { _ in }
+                        manager.pendingResumeTime = nil
+                        manager.showToast("Resumed from \(manager.formatTime(resume))")
+                    }
+                case .buffering:
+                    manager.isBuffering = true
+                case .bufferFinished:
+                    manager.isBuffering = false
+                case .paused:
+                    manager.isPlaying = false
+                case .played:
+                    manager.isPlaying = true
+                default:
+                    break
+                }
+            }
+        }
+        
+        public func playerController(currentTime: TimeInterval, totalTime: TimeInterval) {
+            Task { @MainActor in
+                let manager = DedicatedPlayerManager.shared
+                manager.currentTime = currentTime
+                if totalTime > 0 {
+                    manager.duration = totalTime
+                }
+                manager.updatePeriodicProgress()
+            }
+        }
+        
+        public func playerController(finish error: Error?) {
+            Task { @MainActor in
+                if error != nil {
+                    DedicatedPlayerManager.shared.transitionToResilientStream()
+                } else {
+                    if DedicatedPlayerManager.shared.hasNextEpisode {
+                        DedicatedPlayerManager.shared.playNextEpisode()
+                    }
+                }
+            }
+        }
+        
+        public func playerController(maskShow: Bool) {}
+    }
+}
+#endif
+
 public struct DedicatedPlayerView: View {
     @ObservedObject var playerManager = DedicatedPlayerManager.shared
     @State private var showAudioMenu: Bool = false
@@ -62,6 +176,12 @@ public struct DedicatedPlayerView: View {
                     .edgesIgnoringSafeArea(.all)
                 
                 // 1. Universal Hardware-Accelerated In-App Video Rendering Layer
+                #if canImport(KSPlayer)
+                if let streamUrl = playerManager.resolvedStreamURL {
+                    KSPlayerRepresentable(url: streamUrl, aspectMode: playerManager.aspectMode)
+                        .edgesIgnoringSafeArea(.all)
+                }
+                #else
                 if let p = playerManager.player {
                     #if canImport(UIKit)
                     PlayerViewRepresentable(player: p, aspectMode: playerManager.aspectMode)
@@ -71,6 +191,7 @@ public struct DedicatedPlayerView: View {
                         .edgesIgnoringSafeArea(.all)
                     #endif
                 }
+                #endif
                 
                 // 2. Gesture Handling Layer (Double-tap Seek & Single-tap Controls)
                 HStack(spacing: 0) {
