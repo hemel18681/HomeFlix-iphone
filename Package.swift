@@ -8,16 +8,16 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .executable(
+        .library(
             name: "HomeFlix",
             targets: ["HomeFlix"]
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/kingslay/KSPlayer.git", branch: "main")
+        .package(url: "https://github.com/kingslay/KSPlayer.git", exact: "2.3.4")
     ],
     targets: [
-        .executableTarget(
+        .target(
             name: "HomeFlix",
             dependencies: [
                 .product(name: "KSPlayer", package: "KSPlayer")

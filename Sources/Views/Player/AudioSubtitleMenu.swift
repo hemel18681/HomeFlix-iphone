@@ -42,21 +42,28 @@ public struct AudioSubtitleMenu: View {
                         .tracking(1.2)
                         .foregroundColor(HomeFlixTheme.textMuted)
                     
-                    ForEach(playerManager.audioTracks, id: \.self) { track in
-                        Button(action: {
-                            playerManager.selectedAudioTrack = track
-                        }) {
-                            HStack(spacing: 8) {
-                                if playerManager.selectedAudioTrack == track {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(HomeFlixTheme.brandRed)
-                                } else {
-                                    Color.clear.frame(width: 12, height: 12)
+                    if playerManager.audioTracks.isEmpty {
+                        Text("Default Audio")
+                            .font(.system(size: 13))
+                            .foregroundColor(HomeFlixTheme.textSecondary)
+                    } else {
+                        ForEach(playerManager.audioTracks, id: \.self) { track in
+                            Button(action: {
+                                playerManager.selectAudioTrack(track)
+                            }) {
+                                HStack(spacing: 8) {
+                                    if playerManager.selectedAudioTrack == track {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(HomeFlixTheme.brandRed)
+                                    } else {
+                                        Color.clear.frame(width: 12, height: 12)
+                                    }
+                                    Text(track)
+                                        .font(.system(size: 14, weight: playerManager.selectedAudioTrack == track ? .bold : .regular))
+                                        .foregroundColor(playerManager.selectedAudioTrack == track ? .white : HomeFlixTheme.textSecondary)
+                                        .lineLimit(1)
                                 }
-                                Text(track)
-                                    .font(.system(size: 14, weight: playerManager.selectedAudioTrack == track ? .bold : .regular))
-                                    .foregroundColor(playerManager.selectedAudioTrack == track ? .white : HomeFlixTheme.textSecondary)
                             }
                         }
                     }
@@ -72,7 +79,7 @@ public struct AudioSubtitleMenu: View {
                     
                     ForEach(playerManager.subtitleTracks, id: \.self) { sub in
                         Button(action: {
-                            playerManager.selectedSubtitleTrack = sub
+                            playerManager.selectSubtitleTrack(sub)
                         }) {
                             HStack(spacing: 8) {
                                 if playerManager.selectedSubtitleTrack == sub {
@@ -85,6 +92,7 @@ public struct AudioSubtitleMenu: View {
                                 Text(sub)
                                     .font(.system(size: 14, weight: playerManager.selectedSubtitleTrack == sub ? .bold : .regular))
                                     .foregroundColor(playerManager.selectedSubtitleTrack == sub ? .white : HomeFlixTheme.textSecondary)
+                                    .lineLimit(1)
                             }
                         }
                     }

@@ -130,8 +130,11 @@ public final class WatchlistStore: ObservableObject {
         )
         
         history[mediaId] = progress
-        if let encoded = try? JSONEncoder().encode(history) {
-            UserDefaults.standard.set(encoded, forKey: historyKey)
+        let historySnapshot = history
+        DispatchQueue.global(qos: .utility).async {
+            if let encoded = try? JSONEncoder().encode(historySnapshot) {
+                UserDefaults.standard.set(encoded, forKey: "homeflix_user_history")
+            }
         }
     }
     

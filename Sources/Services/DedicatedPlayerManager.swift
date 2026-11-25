@@ -41,6 +41,7 @@ public final class DedicatedPlayerManager: ObservableObject {
     @Published public var activeItem: MediaItem?
     @Published public var activeSeasonNumber: Int?
     @Published public var activeEpisode: Episode?
+    @Published public var activeStreamURL: URL? = nil
     
     // Playback state
     @Published public var isPlaying: Bool = true
@@ -62,15 +63,22 @@ public final class DedicatedPlayerManager: ObservableObject {
     @Published public var rippleState: RippleState? = nil
     @Published public var showEpisodesSheet: Bool = false
     
-    // Track selection (Dual Audio & Subtitles)
-    @Published public var audioTracks: [String] = ["Original (5.1)", "Hindi (5.1)", "English (Stereo)"]
-    @Published public var selectedAudioTrack: String = "Original (5.1)"
-    @Published public var subtitleTracks: [String] = ["Off", "English [CC]"]
-    @Published public var selectedSubtitleTrack: String = "English [CC]"
+    // Track selection (Real Audio & Subtitles from active KSPlayer stream)
+    @Published public var audioTracks: [String] = []
+    @Published public var selectedAudioTrack: String = ""
+    @Published public var subtitleTracks: [String] = ["Off"]
+    @Published public var selectedSubtitleTrack: String = "Off"
+    
+    #if canImport(KSPlayer)
+    public let subtitleModel = SubtitleModel()
+    private var ksAudioTrackMap: [String: MediaPlayerTrack] = [:]
+    private var ksSubtitleInfoMap: [String: any SubtitleInfo] = [:]
+    #endif
     
     // Native AVPlayer & Engine references
     public private(set) var player: AVPlayer?
     public weak var activeKSPlayerLayer: AnyObject?
+    public weak var activeKSPlayerView: AnyObject?
     private var timeObserverToken: Any?
     private var hideControlsTimer: Timer?
     private var watchdogTimer: Timer?
@@ -82,13 +90,14 @@ public final class DedicatedPlayerManager: ObservableObject {
     public var pendingResumeTime: Double? = nil
     private var lastPersistTime: Double = 0
     
-    public static let verifiedSampleStreamURL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-    
     public init() {
         #if canImport(KSPlayer)
         KSOptions.firstPlayerType = KSMEPlayer.self
         KSOptions.secondPlayerType = KSMEPlayer.self
-        KSOptions.isHardwareDecode = true
+        KSOptions.hardwareDecode = true
+        KSOptions.asynchronousDecompression = false
+        KSOptions.preferredFrame = false
+        KSOptions.preferredForwardBufferDuration = 3.0
         KSOptions.isAutoPlay = true
         KSOptions.isSeekedAutoPlay = true
         #endif
@@ -116,20 +125,50 @@ public final class DedicatedPlayerManager: ObservableObject {
     public var resolvedStreamURL: URL? {
         guard let raw = rawStreamURLString?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
         
-        // 1. Direct standard URL initialization
-        if let direct = URL(string: raw), direct.scheme != nil {
-            return direct
+        // 1. Direct standard URL initialization (fast path for already-valid URLs without forbidden brackets)
+        if !raw.contains("[") && !raw.contains("]") {
+            if let direct = URL(string: raw), direct.scheme != nil, direct.host != nil {
+                return direct
+            }
         }
         
-        // 2. URLComponents parsing
-        if let components = URLComponents(string: raw), let compUrl = components.url {
-            return compUrl
+        // 2. Decode any partial encoding first, then re-encode safely replacing forbidden brackets
+        let decoded = raw.removingPercentEncoding ?? raw
+        if let schemeRange = decoded.range(of: "://") {
+            let schemeAndColon = decoded[..<schemeRange.upperBound]
+            let afterScheme = decoded[schemeRange.upperBound...]
+            
+            if let slashIdx = afterScheme.firstIndex(of: "/") {
+                let hostPort = String(afterScheme[..<slashIdx])
+                let remaining = String(afterScheme[slashIdx...])
+                
+                var pathPart = remaining
+                var queryPart = ""
+                if let qIdx = remaining.firstIndex(of: "?") {
+                    pathPart = String(remaining[..<qIdx])
+                    queryPart = String(remaining[qIdx...])
+                }
+                
+                var pathAllowed = CharacterSet.urlPathAllowed
+                pathAllowed.remove(charactersIn: "[]")
+                let encodedPath = pathPart.addingPercentEncoding(withAllowedCharacters: pathAllowed) ?? pathPart
+                
+                var queryAllowed = CharacterSet.urlQueryAllowed
+                queryAllowed.remove(charactersIn: "[]")
+                let encodedQuery = queryPart.isEmpty ? "" : (queryPart.addingPercentEncoding(withAllowedCharacters: queryAllowed) ?? queryPart)
+                
+                let assembled = "\(schemeAndColon)\(hostPort)\(encodedPath)\(encodedQuery)"
+                if let url = URL(string: assembled) {
+                    return url
+                }
+            }
         }
         
-        // 3. Fallback character set encoding for unescaped characters
-        var allowed = CharacterSet.urlQueryAllowed
-        allowed.insert(charactersIn: ":/?#[]@!$&'()*+,;=")
-        if let encoded = raw.addingPercentEncoding(withAllowedCharacters: allowed),
+        // 3. Fallback encoding
+        var generalAllowed = CharacterSet.urlQueryAllowed
+        generalAllowed.insert(charactersIn: ":/?@!$&'()*+,;=")
+        generalAllowed.remove(charactersIn: "[]")
+        if let encoded = raw.addingPercentEncoding(withAllowedCharacters: generalAllowed),
            let url = URL(string: encoded) {
             return url
         }
@@ -194,6 +233,7 @@ public final class DedicatedPlayerManager: ObservableObject {
         resumeTime: Double? = nil
     ) {
         self.activeItem = item
+        self.activeStreamURL = nil
         
         // Auto-resolve saved episode progress for series if not explicitly passed
         var effectiveSeasonNum = seasonNumber
@@ -236,10 +276,12 @@ public final class DedicatedPlayerManager: ObservableObject {
     private func setupPlayer(resumeTime: Double?) {
         cleanPlayer()
         
-        guard let streamUrl = resolvedStreamURL else {
-            transitionToResilientStream()
+        guard let streamUrl = activeStreamURL ?? resolvedStreamURL else {
+            showToast("Stream URL not found")
+            self.isBuffering = false
             return
         }
+        self.activeStreamURL = streamUrl
         
         // Configure Audio Session for background playback & hardware passthrough
         #if canImport(AVFAudio)
@@ -250,16 +292,20 @@ public final class DedicatedPlayerManager: ObservableObject {
         #if canImport(KSPlayer)
         KSOptions.firstPlayerType = KSMEPlayer.self
         KSOptions.secondPlayerType = KSMEPlayer.self
-        KSOptions.isHardwareDecode = true
+        KSOptions.hardwareDecode = true
+        KSOptions.asynchronousDecompression = false
+        KSOptions.preferredFrame = false
+        KSOptions.preferredForwardBufferDuration = 3.0
         KSOptions.isAutoPlay = true
         KSOptions.isSeekedAutoPlay = true
+        subtitleModel.url = streamUrl
         #else
+        // Fallback to AVPlayer only when KSPlayer is not compiled
         let playerItem = AVPlayerItem(url: streamUrl)
         let newPlayer = AVPlayer(playerItem: playerItem)
         newPlayer.automaticallyWaitsToMinimizeStalling = true
         self.player = newPlayer
         
-        // Status observer to track stream readiness
         statusObserver = playerItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
@@ -270,7 +316,6 @@ public final class DedicatedPlayerManager: ObservableObject {
                     if !dur.isNaN && dur > 0 {
                         self.duration = dur
                     }
-                    // Auto-resume from exact spot like Netflix
                     if let resume = self.pendingResumeTime, resume > 2.0, self.duration > 0, resume < (self.duration - 5.0) {
                         let target = CMTime(seconds: resume, preferredTimescale: 600)
                         self.player?.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
@@ -287,23 +332,24 @@ public final class DedicatedPlayerManager: ObservableObject {
                         self.player?.rate = self.playbackSpeed
                     }
                 case .failed:
-                    self.transitionToResilientStream()
-                case .unknown:
-                    break
-                @unknown default:
+                    self.isBuffering = false
+                    if streamUrl.pathExtension.lowercased() == "mkv" {
+                        self.showToast("Stream connection failed (MKV format requires KSPlayer engine)")
+                    } else {
+                        self.showToast("Stream connection failed")
+                    }
+                default:
                     break
                 }
             }
         }
         
-        // Buffer status observer
         bufferObserver = playerItem.observe(\.isPlaybackLikelyToKeepUp, options: [.new]) { [weak self] item, _ in
             Task { @MainActor [weak self] in
                 self?.isBuffering = !item.isPlaybackLikelyToKeepUp
             }
         }
         
-        // Periodic time observer
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         self.timeObserverToken = newPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
@@ -321,52 +367,6 @@ public final class DedicatedPlayerManager: ObservableObject {
         }
         newPlayer.play()
         #endif
-        
-        // High-resilience Network Watchdog (12s threshold - never prematurely kills healthy buffering)
-        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                if self.isBuffering && self.duration == 0 && self.currentTime == 0 {
-                    self.transitionToResilientStream()
-                }
-            }
-        }
-    }
-    
-    // Transparent, zero-error transition to high-speed stream pipeline
-    public func transitionToResilientStream() {
-        guard !isUsingResilientFallback else { return }
-        isUsingResilientFallback = true
-        
-        guard let fallbackUrl = URL(string: Self.verifiedSampleStreamURL) else { return }
-        let fallbackItem = AVPlayerItem(url: fallbackUrl)
-        
-        statusObserver?.invalidate()
-        statusObserver = fallbackItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                if item.status == .readyToPlay {
-                    self.isBuffering = false
-                    let dur = CMTimeGetSeconds(item.duration)
-                    if !dur.isNaN && dur > 0 {
-                        self.duration = dur
-                    }
-                    if self.currentTime > 2.0 {
-                        let target = CMTime(seconds: self.currentTime, preferredTimescale: 600)
-                        self.player?.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
-                    }
-                    if self.isPlaying {
-                        self.player?.play()
-                        self.player?.rate = self.playbackSpeed
-                    }
-                }
-            }
-        }
-        
-        self.player?.replaceCurrentItem(with: fallbackItem)
-        self.player?.play()
-        self.player?.rate = self.playbackSpeed
-        self.isBuffering = false
     }
     
     public func showToast(_ message: String) {
@@ -380,11 +380,30 @@ public final class DedicatedPlayerManager: ObservableObject {
     }
     
     public func close() {
+        isForceLandscape = false
+        #if canImport(UIKit)
+        AppDelegate.orientationLock = .allButUpsideDown
+        Task { @MainActor in
+            if #available(iOS 16.0, *) {
+                let scenes = UIApplication.shared.connectedScenes
+                if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ?? scenes.first as? UIWindowScene {
+                    let pref = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: .portrait)
+                    windowScene.requestGeometryUpdate(pref) { _ in }
+                    windowScene.windows.forEach { window in
+                        window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+                    }
+                }
+            }
+            UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+            UIViewController.attemptRotationToDeviceOrientation()
+        }
+        #endif
         persistProgress(force: true)
         cleanPlayer()
         self.isPresented = false
         self.activeItem = nil
         self.activeEpisode = nil
+        self.activeStreamURL = nil
         self.isLocked = false
         self.showLockControlsHint = false
         self.showEpisodesSheet = false
@@ -395,10 +414,23 @@ public final class DedicatedPlayerManager: ObservableObject {
     private func cleanPlayer() {
         #if canImport(KSPlayer)
         if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            ks.delegate = nil
             ks.pause()
-            activeKSPlayerLayer = nil
         }
+        activeKSPlayerView = nil
+        activeKSPlayerLayer = nil
+        ksAudioTrackMap.removeAll()
+        ksSubtitleInfoMap.removeAll()
+        subtitleModel.selectedSubtitleInfo = nil
+        #else
+        activeKSPlayerView = nil
+        activeKSPlayerLayer = nil
         #endif
+        audioTracks = []
+        selectedAudioTrack = ""
+        subtitleTracks = ["Off"]
+        selectedSubtitleTrack = "Off"
+        self.activeStreamURL = nil
         watchdogTimer?.invalidate()
         watchdogTimer = nil
         statusObserver?.invalidate()
@@ -459,8 +491,7 @@ public final class DedicatedPlayerManager: ObservableObject {
         let target = max(0, min(duration > 0 ? duration : targetSeconds, targetSeconds))
         #if canImport(KSPlayer)
         if let ks = activeKSPlayerLayer as? KSPlayerLayer {
-            let time = CMTime(seconds: target, preferredTimescale: 600)
-            ks.seek(time: time) { [weak self] _ in
+            ks.seek(time: target, autoPlay: isPlaying) { [weak self] _ in
                 Task { @MainActor in
                     self?.currentTime = target
                 }
@@ -494,22 +525,130 @@ public final class DedicatedPlayerManager: ObservableObject {
     public func setSpeed(_ speed: Float) {
         if isLocked { return }
         playbackSpeed = speed
+        resetHideControlsTimer()
         #if canImport(KSPlayer)
         if let ks = activeKSPlayerLayer as? KSPlayerLayer {
-            ks.playbackRate = speed
+            ks.player.playbackRate = speed
+            showToast("Speed: \(String(format: "%.2g", speed))x")
             return
         }
         #endif
         if isPlaying {
             player?.rate = speed
+            showToast("Speed: \(String(format: "%.2g", speed))x")
         }
+    }
+    
+    #if canImport(KSPlayer)
+    public func refreshKSPlayerTracks(layer: KSPlayerLayer) {
+        // 1. Real Audio Tracks
+        let rawAudio = layer.player.tracks(mediaType: .audio)
+        var newAudioLabels: [String] = []
+        var newAudioMap: [String: MediaPlayerTrack] = [:]
+        var activeAudioLabel = ""
+        
+        for (idx, track) in rawAudio.enumerated() {
+            let baseName = track.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let lang = track.language?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            var label: String
+            if !baseName.isEmpty && !lang.isEmpty && !baseName.localizedCaseInsensitiveContains(lang) {
+                label = "\(baseName) (\(lang))"
+            } else if !baseName.isEmpty {
+                label = baseName
+            } else if !lang.isEmpty {
+                label = "Audio \(idx + 1) (\(lang))"
+            } else {
+                label = "Audio Track \(idx + 1)"
+            }
+            if newAudioMap[label] != nil {
+                label = "\(label) #\(idx + 1)"
+            }
+            newAudioLabels.append(label)
+            newAudioMap[label] = track
+            if track.isEnabled {
+                activeAudioLabel = label
+            }
+        }
+        if activeAudioLabel.isEmpty, let first = newAudioLabels.first {
+            activeAudioLabel = first
+        }
+        self.audioTracks = newAudioLabels
+        self.ksAudioTrackMap = newAudioMap
+        self.selectedAudioTrack = activeAudioLabel
+        
+        // 2. Real Embedded & External Subtitles
+        if let dataSource = layer.player.subtitleDataSouce {
+            subtitleModel.addSubtitle(dataSouce: dataSource)
+        }
+        let infos = subtitleModel.subtitleInfos
+        var newSubLabels: [String] = ["Off"]
+        var newSubMap: [String: any SubtitleInfo] = [:]
+        var activeSubLabel = "Off"
+        
+        for (idx, info) in infos.enumerated() {
+            var label = info.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if label.isEmpty {
+                label = "Subtitle \(idx + 1)"
+            }
+            if newSubMap[label] != nil {
+                label = "\(label) #\(idx + 1)"
+            }
+            newSubLabels.append(label)
+            newSubMap[label] = info
+            if info.isEnabled {
+                activeSubLabel = label
+            }
+        }
+        // Auto-select first subtitle track if none enabled yet and embedded tracks exist
+        if activeSubLabel == "Off", let firstSub = newSubLabels.dropFirst().first, let firstInfo = newSubMap[firstSub] {
+            subtitleModel.selectedSubtitleInfo = firstInfo
+            if let track = firstInfo as? MediaPlayerTrack {
+                layer.player.select(track: track)
+            }
+            activeSubLabel = firstSub
+        }
+        self.subtitleTracks = newSubLabels
+        self.ksSubtitleInfoMap = newSubMap
+        self.selectedSubtitleTrack = activeSubLabel
+    }
+    #endif
+    
+    public func selectAudioTrack(_ label: String) {
+        selectedAudioTrack = label
+        resetHideControlsTimer()
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer, let track = ksAudioTrackMap[label] {
+            ks.player.select(track: track)
+            showToast("Audio: \(label)")
+        }
+        #endif
+    }
+    
+    public func selectSubtitleTrack(_ label: String) {
+        selectedSubtitleTrack = label
+        resetHideControlsTimer()
+        #if canImport(KSPlayer)
+        if label == "Off" {
+            subtitleModel.selectedSubtitleInfo = nil
+            showToast("Subtitles: Off")
+            return
+        }
+        if let info = ksSubtitleInfoMap[label] {
+            if let ks = activeKSPlayerLayer as? KSPlayerLayer, let track = info as? MediaPlayerTrack {
+                ks.player.select(track: track)
+            }
+            subtitleModel.selectedSubtitleInfo = info
+            _ = subtitleModel.subtitle(currentTime: currentTime)
+            showToast("Subtitle: \(label)")
+        }
+        #endif
     }
     
     public func toggleMute() {
         isMuted.toggle()
         #if canImport(KSPlayer)
         if let ks = activeKSPlayerLayer as? KSPlayerLayer {
-            ks.player?.isMuted = isMuted
+            ks.player.isMuted = isMuted
             return
         }
         #endif
@@ -571,10 +710,53 @@ public final class DedicatedPlayerManager: ObservableObject {
     
     public func toggleAspectMode() {
         aspectMode = (aspectMode == .fit) ? .fill : .fit
+        #if canImport(KSPlayer)
+        if let ks = activeKSPlayerLayer as? KSPlayerLayer {
+            ks.player.contentMode = (aspectMode == .fill) ? .scaleAspectFill : .scaleAspectFit
+        }
+        #endif
     }
     
     public func toggleRemainingTime() {
         isRemainingTime.toggle()
+    }
+    
+    public func toggleOrientation() {
+        #if canImport(UIKit)
+        Task { @MainActor in
+            let scenes = UIApplication.shared.connectedScenes
+            let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ?? scenes.first as? UIWindowScene
+            let keyWindow = windowScene?.windows.first(where: { $0.isKeyWindow }) ?? windowScene?.windows.first
+            let isPhysicallyLandscape: Bool
+            if let ws = windowScene {
+                isPhysicallyLandscape = ws.interfaceOrientation.isLandscape || ((keyWindow?.bounds.width ?? 0) > (keyWindow?.bounds.height ?? 0))
+            } else {
+                isPhysicallyLandscape = false
+            }
+            
+            let currentlyLandscape = isForceLandscape || isPhysicallyLandscape
+            let targetLandscape = !currentlyLandscape
+            isForceLandscape = targetLandscape
+            AppDelegate.orientationLock = targetLandscape ? .landscapeRight : .portrait
+            
+            if #available(iOS 16.0, *), let windowScene = windowScene {
+                windowScene.windows.forEach { window in
+                    window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+                }
+                let targetMask: UIInterfaceOrientationMask = targetLandscape ? .landscapeRight : .portrait
+                let pref = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: targetMask)
+                windowScene.requestGeometryUpdate(pref) { error in
+                    print("Rotation request error: \(error)")
+                }
+            } else {
+                let target = targetLandscape ? UIInterfaceOrientation.landscapeRight.rawValue : UIInterfaceOrientation.portrait.rawValue
+                UIDevice.current.setValue(target, forKey: "orientation")
+                UIViewController.attemptRotationToDeviceOrientation()
+            }
+        }
+        #else
+        isForceLandscape.toggle()
+        #endif
     }
     
     public func toggleControls() {
@@ -606,7 +788,7 @@ public final class DedicatedPlayerManager: ObservableObject {
         }
         
         // Throttle progress persistence unless forced
-        guard force || abs(currentTime - lastPersistTime) >= 3.0 else { return }
+        guard force || abs(currentTime - lastPersistTime) >= 15.0 else { return }
         lastPersistTime = currentTime
         
         WatchlistStore.shared.updateProgress(

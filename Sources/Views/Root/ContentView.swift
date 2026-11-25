@@ -5,8 +5,8 @@ public struct ContentView: View {
     @State private var isSearchPresented: Bool = false
     @State private var activeDetailItem: MediaItem? = nil
     @State private var showPreferences: Bool = false
+    @State private var isPlayerPresented: Bool = false
     
-    @ObservedObject private var playerManager = DedicatedPlayerManager.shared
     @ObservedObject private var catalogStore = CatalogStore.shared
     
     public init() {}
@@ -24,7 +24,7 @@ public struct ContentView: View {
                         activeDetailItem = item
                     },
                     onPlayItem: { item in
-                        playerManager.play(item: item)
+                        DedicatedPlayerManager.shared.play(item: item)
                     }
                 )
                 
@@ -62,7 +62,7 @@ public struct ContentView: View {
                 }
                 
                 // 4. Fullscreen Dedicated Universal Player Overlay (Pure SwiftUI Z-Stack)
-                if playerManager.isPresented {
+                if isPlayerPresented {
                     DedicatedPlayerView()
                         .edgesIgnoringSafeArea(.all)
                         .zIndex(999)
@@ -78,7 +78,7 @@ public struct ContentView: View {
                     },
                     onPlay: { mediaItem, seasonNum, episode in
                         activeDetailItem = nil
-                        playerManager.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
+                        DedicatedPlayerManager.shared.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
                     }
                 )
             }
@@ -89,8 +89,11 @@ public struct ContentView: View {
                     }
                 )
             }
-            .animation(.easeInOut(duration: 0.25), value: playerManager.isPresented)
+            .animation(.easeInOut(duration: 0.25), value: isPlayerPresented)
             .animation(.easeInOut(duration: 0.2), value: isSearchPresented)
+            .onReceive(DedicatedPlayerManager.shared.$isPresented) { presented in
+                isPlayerPresented = presented
+            }
         }
     }
 }

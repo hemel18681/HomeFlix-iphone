@@ -72,7 +72,7 @@ public struct SearchModalView: View {
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, max(14, proxy.safeAreaInsets.top + 6))
+                .padding(.top, max(56, proxy.safeAreaInsets.top + 10))
                 .padding(.bottom, 12)
                 
                 // Filter Pills
