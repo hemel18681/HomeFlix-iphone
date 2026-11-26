@@ -74,6 +74,8 @@ public final class DedicatedPlayerManager: ObservableObject {
     private var ksAudioTrackMap: [String: MediaPlayerTrack] = [:]
     private var ksSubtitleInfoMap: [String: any SubtitleInfo] = [:]
     #endif
+    private var userDisabledSubtitles: Bool = false
+    private var hasPerformedInitialSubtitleSync: Bool = false
     
     // Native AVPlayer & Engine references
     public private(set) var player: AVPlayer?
@@ -118,6 +120,15 @@ public final class DedicatedPlayerManager: ObservableObject {
         }
         if let s = activeItem?.streamUrl, !s.isEmpty {
             return s
+        }
+        if let item = activeItem {
+            if item.type == .movie, let resolved = CatalogStore.shared.getMovieStreamURL(for: item.id) {
+                return resolved
+            }
+            if item.type == .series, let detail = CatalogStore.shared.getSeriesDetail(for: item.id),
+               let firstEp = detail.seasons.first?.episodes.first, !firstEp.streamUrl.isEmpty {
+                return firstEp.streamUrl
+            }
         }
         return nil
     }
@@ -232,6 +243,28 @@ public final class DedicatedPlayerManager: ObservableObject {
         episode: Episode? = nil,
         resumeTime: Double? = nil
     ) {
+        #if canImport(UIKit)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        AppDelegate.orientationLock = .landscape
+        Task { @MainActor in
+            if #available(iOS 16.0, *) {
+                let scenes = UIApplication.shared.connectedScenes
+                if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ?? scenes.first as? UIWindowScene {
+                    windowScene.windows.forEach { window in
+                        window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+                    }
+                    let pref = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: .landscapeRight)
+                    windowScene.requestGeometryUpdate(pref) { _ in }
+                }
+            } else {
+                UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+                UIViewController.attemptRotationToDeviceOrientation()
+            }
+        }
+        #endif
+        self.isForceLandscape = true
+        self.userDisabledSubtitles = false
+        self.hasPerformedInitialSubtitleSync = false
         self.activeItem = item
         self.activeStreamURL = nil
         
@@ -252,6 +285,15 @@ public final class DedicatedPlayerManager: ObservableObject {
                     effectiveSeasonNum = sNum
                     effectiveEpisode = matchedEp
                 }
+            }
+        }
+        
+        if item.type == .series && effectiveEpisode == nil {
+            if let detail = CatalogStore.shared.getSeriesDetail(for: item.id),
+               let firstSeason = detail.seasons.first,
+               let firstEp = firstSeason.episodes.first {
+                effectiveSeasonNum = firstSeason.seasonNumber
+                effectiveEpisode = firstEp
             }
         }
         
@@ -387,15 +429,16 @@ public final class DedicatedPlayerManager: ObservableObject {
             if #available(iOS 16.0, *) {
                 let scenes = UIApplication.shared.connectedScenes
                 if let windowScene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene ?? scenes.first as? UIWindowScene {
-                    let pref = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: .portrait)
-                    windowScene.requestGeometryUpdate(pref) { _ in }
                     windowScene.windows.forEach { window in
                         window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
                     }
+                    let pref = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: .portrait)
+                    windowScene.requestGeometryUpdate(pref) { _ in }
                 }
+            } else {
+                UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+                UIViewController.attemptRotationToDeviceOrientation()
             }
-            UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
-            UIViewController.attemptRotationToDeviceOrientation()
         }
         #endif
         persistProgress(force: true)
@@ -539,29 +582,104 @@ public final class DedicatedPlayerManager: ObservableObject {
         }
     }
     
+    private func cleanTrackLanguageName(rawName: String, rawLang: String?, rawLangCode: String?, fallbackPrefix: String, index: Int) -> String {
+        let langMap: [String: String] = [
+            "en": "English", "eng": "English",
+            "hi": "Hindi", "hin": "Hindi",
+            "bn": "Bengali", "ben": "Bengali", "bangla": "Bangla",
+            "ja": "Japanese", "jpn": "Japanese",
+            "ko": "Korean", "kor": "Korean",
+            "ta": "Tamil", "tam": "Tamil",
+            "te": "Telugu", "tel": "Telugu",
+            "ml": "Malayalam", "mal": "Malayalam",
+            "mr": "Marathi", "mar": "Marathi",
+            "ur": "Urdu", "urd": "Urdu",
+            "pa": "Punjabi", "pan": "Punjabi",
+            "es": "Spanish", "spa": "Spanish",
+            "fr": "French", "fre": "French", "fra": "French",
+            "de": "German", "ger": "German", "deu": "German",
+            "it": "Italian", "ita": "Italian",
+            "pt": "Portuguese", "por": "Portuguese",
+            "ru": "Russian", "rus": "Russian",
+            "ar": "Arabic", "ara": "Arabic",
+            "zh": "Chinese", "chi": "Chinese", "zho": "Chinese",
+            "id": "Indonesian", "ind": "Indonesian",
+            "th": "Thai", "tha": "Thai",
+            "vi": "Vietnamese", "vie": "Vietnamese",
+            "tr": "Turkish", "tur": "Turkish"
+        ]
+        
+        // 1. Check explicit ISO languageCode first, then language, then rawName if it is a 2-3 letter code
+        let candidateCodes = [rawLangCode, rawLang, rawName]
+        for candidate in candidateCodes {
+            guard let c = candidate?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                  !c.isEmpty, c != "und" else { continue }
+            if let mapped = langMap[c] {
+                return mapped
+            }
+            // Strip any "(hearing impaired)" suffix on short codes
+            let token = c.components(separatedBy: CharacterSet.alphanumerics.inverted).first ?? ""
+            if let mapped = langMap[token] {
+                return mapped
+            }
+            if (c.count == 2 || c.count == 3),
+               let localized = Locale(identifier: "en").localizedString(forLanguageCode: c),
+               !localized.isEmpty,
+               localized.lowercased() != c {
+                return localized.capitalized
+            }
+        }
+        
+        let trimmed = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = trimmed.lowercased()
+        let orderedLanguages = [
+            "English", "Hindi", "Bengali", "Bangla", "Japanese", "Korean",
+            "Tamil", "Telugu", "Malayalam", "Marathi", "Urdu", "Punjabi",
+            "Spanish", "French", "German", "Italian", "Portuguese",
+            "Russian", "Arabic", "Chinese", "Indonesian", "Thai", "Vietnamese", "Turkish"
+        ]
+        for langName in orderedLanguages {
+            if lower.contains(langName.lowercased()) {
+                return langName
+            }
+        }
+        
+        // Check individual words in rawName against langMap (e.g. "eng (hearing impaired)" or "hin_aac")
+        let words = lower.components(separatedBy: CharacterSet.alphanumerics.inverted)
+        for word in words where !word.isEmpty {
+            if let mapped = langMap[word] {
+                return mapped
+            }
+        }
+        
+        // Strip bracketed/parenthesized uploader or codec tags if no known language matched
+        let cleaned = trimmed
+            .replacingOccurrences(of: "\\[[^\\]]*\\]", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "\\([^\\)]*\\)", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "@\\S+", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if cleaned.isEmpty || cleaned.count <= 3 {
+            return "\(fallbackPrefix) \(index + 1)"
+        }
+        return cleaned
+    }
+    
     #if canImport(KSPlayer)
     public func refreshKSPlayerTracks(layer: KSPlayerLayer) {
-        // 1. Real Audio Tracks
+        // 1. Real Audio Tracks (clean language labels)
         let rawAudio = layer.player.tracks(mediaType: .audio)
         var newAudioLabels: [String] = []
         var newAudioMap: [String: MediaPlayerTrack] = [:]
         var activeAudioLabel = ""
         
         for (idx, track) in rawAudio.enumerated() {
-            let baseName = track.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let lang = track.language?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            var label: String
-            if !baseName.isEmpty && !lang.isEmpty && !baseName.localizedCaseInsensitiveContains(lang) {
-                label = "\(baseName) (\(lang))"
-            } else if !baseName.isEmpty {
-                label = baseName
-            } else if !lang.isEmpty {
-                label = "Audio \(idx + 1) (\(lang))"
-            } else {
-                label = "Audio Track \(idx + 1)"
-            }
-            if newAudioMap[label] != nil {
-                label = "\(label) #\(idx + 1)"
+            let baseLabel = cleanTrackLanguageName(rawName: track.name, rawLang: track.language, rawLangCode: track.languageCode, fallbackPrefix: "Audio", index: idx)
+            var label = baseLabel
+            var suffix = 2
+            while newAudioMap[label] != nil {
+                label = "\(baseLabel) \(suffix)"
+                suffix += 1
             }
             newAudioLabels.append(label)
             newAudioMap[label] = track
@@ -576,7 +694,7 @@ public final class DedicatedPlayerManager: ObservableObject {
         self.ksAudioTrackMap = newAudioMap
         self.selectedAudioTrack = activeAudioLabel
         
-        // 2. Real Embedded & External Subtitles
+        // 2. Real Embedded & External Subtitles (clean language labels)
         if let dataSource = layer.player.subtitleDataSouce {
             subtitleModel.addSubtitle(dataSouce: dataSource)
         }
@@ -586,12 +704,13 @@ public final class DedicatedPlayerManager: ObservableObject {
         var activeSubLabel = "Off"
         
         for (idx, info) in infos.enumerated() {
-            var label = info.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            if label.isEmpty {
-                label = "Subtitle \(idx + 1)"
-            }
-            if newSubMap[label] != nil {
-                label = "\(label) #\(idx + 1)"
+            let mediaTrack = info as? MediaPlayerTrack
+            let baseLabel = cleanTrackLanguageName(rawName: info.name, rawLang: mediaTrack?.language, rawLangCode: mediaTrack?.languageCode, fallbackPrefix: "Subtitle", index: idx)
+            var label = baseLabel
+            var suffix = 2
+            while newSubMap[label] != nil {
+                label = "\(baseLabel) \(suffix)"
+                suffix += 1
             }
             newSubLabels.append(label)
             newSubMap[label] = info
@@ -599,13 +718,29 @@ public final class DedicatedPlayerManager: ObservableObject {
                 activeSubLabel = label
             }
         }
-        // Auto-select first subtitle track if none enabled yet and embedded tracks exist
-        if activeSubLabel == "Off", let firstSub = newSubLabels.dropFirst().first, let firstInfo = newSubMap[firstSub] {
-            subtitleModel.selectedSubtitleInfo = firstInfo
-            if let track = firstInfo as? MediaPlayerTrack {
-                layer.player.select(track: track)
+        // Auto-select and bind first subtitle track unless user explicitly turned subtitles Off
+        if !userDisabledSubtitles {
+            let targetLabel = (activeSubLabel != "Off") ? activeSubLabel : (newSubLabels.dropFirst().first ?? "Off")
+            if targetLabel != "Off", let targetInfo = newSubMap[targetLabel] {
+                if let track = targetInfo as? MediaPlayerTrack {
+                    if !track.isEnabled {
+                        layer.player.select(track: track)
+                    }
+                    // Force FFmpeg to re-read initial subtitle packets (which were discarded during openThread)
+                    if !hasPerformedInitialSubtitleSync {
+                        hasPerformedInitialSubtitleSync = true
+                        if pendingResumeTime == nil {
+                            let syncTime = max(0, layer.player.currentPlaybackTime)
+                            layer.seek(time: syncTime, autoPlay: true) { _ in }
+                        }
+                    }
+                }
+                if subtitleModel.selectedSubtitleInfo?.subtitleID != targetInfo.subtitleID {
+                    subtitleModel.selectedSubtitleInfo = targetInfo
+                }
+                _ = subtitleModel.subtitle(currentTime: currentTime)
+                activeSubLabel = targetLabel
             }
-            activeSubLabel = firstSub
         }
         self.subtitleTracks = newSubLabels
         self.ksSubtitleInfoMap = newSubMap
@@ -629,10 +764,13 @@ public final class DedicatedPlayerManager: ObservableObject {
         resetHideControlsTimer()
         #if canImport(KSPlayer)
         if label == "Off" {
+            userDisabledSubtitles = true
             subtitleModel.selectedSubtitleInfo = nil
+            _ = subtitleModel.subtitle(currentTime: currentTime)
             showToast("Subtitles: Off")
             return
         }
+        userDisabledSubtitles = false
         if let info = ksSubtitleInfoMap[label] {
             if let ks = activeKSPlayerLayer as? KSPlayerLayer, let track = info as? MediaPlayerTrack {
                 ks.player.select(track: track)

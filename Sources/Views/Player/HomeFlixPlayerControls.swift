@@ -4,15 +4,18 @@ public struct HomeFlixPlayerControls: View {
     @ObservedObject var playerManager = DedicatedPlayerManager.shared
     @Binding var showAudioMenu: Bool
     var safeAreaInsets: EdgeInsets = EdgeInsets()
+    var isLandscape: Bool = false
     let onClose: () -> Void
     
     public init(
         showAudioMenu: Binding<Bool>,
         safeAreaInsets: EdgeInsets = EdgeInsets(),
+        isLandscape: Bool = false,
         onClose: @escaping () -> Void
     ) {
         self._showAudioMenu = showAudioMenu
         self.safeAreaInsets = safeAreaInsets
+        self.isLandscape = isLandscape
         self.onClose = onClose
     }
     
@@ -39,19 +42,21 @@ public struct HomeFlixPlayerControls: View {
     
     private var effectiveTopPadding: CGFloat {
         #if canImport(UIKit)
-        let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
-        let window = windowScene?.windows.first(where: { $0.isKeyWindow })
+        let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+            ?? UIApplication.shared.connectedScenes.first as? UIWindowScene
+        let window = windowScene?.windows.first(where: { $0.isKeyWindow }) ?? windowScene?.windows.first
         let windowTop = window?.safeAreaInsets.top ?? 0
-        let isLandscape = (window?.bounds.width ?? 0) > (window?.bounds.height ?? 0)
+        let windowIsLandscape = (window?.bounds.width ?? 0) > (window?.bounds.height ?? 0)
         
-        if isLandscape || playerManager.isForceLandscape {
+        if isLandscape || playerManager.isForceLandscape || windowIsLandscape {
             return max(16, safeAreaInsets.top)
         }
         
         let rawTop = max(safeAreaInsets.top, windowTop)
-        return max(64, rawTop + 14)
+        return max(74, rawTop + 14)
         #else
-        return max(64, safeAreaInsets.top + 14)
+        return max(74, safeAreaInsets.top + 14)
         #endif
     }
     
@@ -288,23 +293,6 @@ public struct HomeFlixPlayerControls: View {
                             .padding(.horizontal, 9)
                             .padding(.vertical, 6)
                             .background(Color.white.opacity(0.16))
-                            .cornerRadius(5)
-                        }
-                        
-                        // Landscape / Portrait Rotation Toggle
-                        Button(action: {
-                            playerManager.toggleOrientation()
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(.system(size: 13, weight: .bold))
-                                Text("Rotate")
-                                    .font(.system(size: 11, weight: .bold))
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.18))
                             .cornerRadius(5)
                         }
                     }

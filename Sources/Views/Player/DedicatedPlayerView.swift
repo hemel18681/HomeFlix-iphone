@@ -62,6 +62,7 @@ public class HomeFlixPlayerOptions: KSOptions {
         maxBufferDuration = 30.0
         isSecondOpen = true
         isAccurateSeek = false
+        isSeekImageSubtitle = true
         
         // Clean LAN/BDIX HTTP streaming parameters (avoid multiple_requests & artificial buffer_size)
         formatContextOptions["reconnect"] = 1
@@ -144,6 +145,10 @@ public class KSPlayerContainerView: UIView {
             currentVideoView = videoView
         } else if videoView.frame != bounds {
             videoView.frame = bounds
+        }
+        if bounds.width > 0 && bounds.height > 0 {
+            videoView.setNeedsLayout()
+            videoView.layoutIfNeeded()
         }
     }
 }
@@ -250,6 +255,9 @@ public struct KSPlayerRepresentable: UIViewRepresentable {
                     manager.isPlaying = true
                     container?.attachVideoViewIfNeeded()
                     layer.player.playbackRate = manager.playbackSpeed
+                    if manager.isPlaying && !layer.player.isPlaying {
+                        layer.play()
+                    }
                     manager.refreshKSPlayerTracks(layer: layer)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak layer] in
                         guard let layer = layer else { return }
@@ -536,6 +544,7 @@ public struct DedicatedPlayerView: View {
                 HomeFlixPlayerControls(
                     showAudioMenu: $showAudioMenu,
                     safeAreaInsets: insets,
+                    isLandscape: containerWidth > containerHeight,
                     onClose: {
                         playerManager.close()
                     }
@@ -543,36 +552,7 @@ public struct DedicatedPlayerView: View {
                 .transition(.opacity)
             }
             
-            // 7. Skip Intro Floating Button (All Content)
-            if playerManager.showSkipIntro && !playerManager.isLocked {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            playerManager.skipIntro()
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "forward.fill")
-                                    .font(.system(size: 13, weight: .bold))
-                                Text("Skip Intro")
-                                    .font(.system(size: 13, weight: .bold))
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.black.opacity(0.75))
-                            .cornerRadius(6)
-                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.4), lineWidth: 1))
-                        }
-                        .padding(.trailing, max(24, insets.trailing + 12))
-                        .padding(.bottom, max(34, insets.bottom + (playerManager.showControls ? 95 : 24)))
-                        .transition(.opacity.combined(with: .scale))
-                    }
-                }
-            }
-            
-            // 8. Next Episode End-Credits Prompt (Series)
+            // 7. Next Episode End-Credits Prompt (Series)
             if playerManager.showNextEpisodePrompt && !playerManager.isLocked, let nextEp = playerManager.nextEpisodeInfo {
                 VStack {
                     Spacer()

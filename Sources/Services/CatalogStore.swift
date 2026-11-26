@@ -13,6 +13,8 @@ public final class CatalogStore: ObservableObject {
     @Published public var refreshSeed: Int = 0
     
     private var searchIndex: [MediaItem] = []
+    private var movieStreamMap: [String: String] = [:]
+    private var allSeriesLoaded: Bool = false
     
     public init() {
         loadCatalog()
@@ -44,22 +46,48 @@ public final class CatalogStore: ObservableObject {
             self.seriesDetails = decoded
         }
         
-        // 4. Background parse search-index
+        // 4. Background parse search-index + full movie streams + all series episodes
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self = self else { return }
+            
+            var loadedIndex: [MediaItem] = []
             if let indexData = self.loadResourceData(name: "search-index", ext: "json"),
                let decoded = try? JSONDecoder().decode([MediaItem].self, from: indexData) {
-                await MainActor.run {
-                    self.searchIndex = decoded
-                    self.allItems = decoded
-                    self.isLoaded = true
+                loadedIndex = decoded
+            }
+            
+            var loadedMovieStreams: [String: String] = [:]
+            if let streamData = self.loadCompressedResourceData(name: "movie-streams", ext: "zlib"),
+               let decoded = try? JSONDecoder().decode([String: String].self, from: streamData) {
+                loadedMovieStreams = decoded
+            }
+            
+            var loadedSeries: [String: SeriesDetail] = [:]
+            if let allSeriesData = self.loadCompressedResourceData(name: "series-episodes-all", ext: "zlib"),
+               let decoded = try? JSONDecoder().decode([String: SeriesDetail].self, from: allSeriesData) {
+                loadedSeries = decoded
+            }
+            
+            await MainActor.run {
+                if !loadedIndex.isEmpty {
+                    self.searchIndex = loadedIndex
+                    self.allItems = loadedIndex
                 }
-            } else {
-                await MainActor.run {
-                    self.isLoaded = true
+                if !loadedMovieStreams.isEmpty {
+                    self.movieStreamMap = loadedMovieStreams
                 }
+                if !loadedSeries.isEmpty {
+                    self.seriesDetails.merge(loadedSeries) { _, new in new }
+                    self.allSeriesLoaded = true
+                }
+                self.isLoaded = true
             }
         }
+    }
+    
+    private nonisolated func loadCompressedResourceData(name: String, ext: String) -> Data? {
+        guard let compressed = loadResourceData(name: name, ext: ext) else { return nil }
+        return try? (compressed as NSData).decompressed(using: .zlib) as Data
     }
     
     private nonisolated func loadResourceData(name: String, ext: String) -> Data? {
@@ -436,7 +464,81 @@ public final class CatalogStore: ObservableObject {
     
     // Series Detail with Episodes
     public func getSeriesDetail(for id: String) -> SeriesDetail? {
-        seriesDetails[id]
+        if let found = seriesDetails[id] {
+            return found
+        }
+        if !allSeriesLoaded,
+           let allSeriesData = loadCompressedResourceData(name: "series-episodes-all", ext: "zlib"),
+           let decoded = try? JSONDecoder().decode([String: SeriesDetail].self, from: allSeriesData) {
+            seriesDetails.merge(decoded) { _, new in new }
+            allSeriesLoaded = true
+        }
+        return seriesDetails[id]
+    }
+    
+    public func getMovieStreamURL(for id: String) -> String? {
+        if let url = movieStreamMap[id], !url.isEmpty {
+            return url
+        }
+        if movieStreamMap.isEmpty,
+           let streamData = loadCompressedResourceData(name: "movie-streams", ext: "zlib"),
+           let decoded = try? JSONDecoder().decode([String: String].self, from: streamData) {
+            movieStreamMap = decoded
+            if let url = movieStreamMap[id], !url.isEmpty {
+                return url
+            }
+        }
+        if let item = curatedRows.flatMap({ $0.items }).first(where: { $0.id == id }), let url = item.streamUrl {
+            return url
+        }
+        if let item = featured.first(where: { $0.id == id }), let url = item.streamUrl {
+            return url
+        }
+        return nil
+    }
+    
+    private func enrichItem(_ item: MediaItem) -> MediaItem {
+        if item.type == .movie {
+            if let existing = item.streamUrl, !existing.isEmpty {
+                return item
+            }
+            if let resolved = movieStreamMap[item.id] {
+                return MediaItem(
+                    id: item.id,
+                    type: item.type,
+                    title: item.title,
+                    year: item.year,
+                    quality: item.quality,
+                    category: item.category,
+                    tags: item.tags,
+                    poster: item.poster,
+                    backdrop: item.backdrop,
+                    streamUrl: resolved,
+                    overview: item.overview,
+                    totalSeasons: item.totalSeasons,
+                    totalEpisodes: item.totalEpisodes
+                )
+            }
+        } else if item.type == .series {
+            if let detail = seriesDetails[item.id] {
+                return MediaItem(
+                    id: item.id,
+                    type: item.type,
+                    title: item.title,
+                    year: item.year,
+                    quality: item.quality,
+                    category: item.category,
+                    tags: item.tags,
+                    poster: item.poster,
+                    backdrop: item.backdrop,
+                    streamUrl: item.streamUrl,
+                    overview: item.overview,
+                    totalSeasons: detail.totalSeasons ?? detail.seasons.count,
+                    totalEpisodes: detail.totalEpisodes ?? detail.seasons.reduce(0) { $0 + $1.episodes.count }
+                )
+            }
+        }
+        return item
     }
     
     // More Like This Recommendation Engine
@@ -473,7 +575,7 @@ public final class CatalogStore: ObservableObject {
             if let qual = qualityFilter, item.quality?.localizedCaseInsensitiveContains(qual) != true { continue }
             
             if terms.isEmpty {
-                matches.append(item)
+                matches.append(enrichItem(item))
             } else {
                 let titleLower = item.title.lowercased()
                 let tagsLower = (item.tags ?? []).joined(separator: " ").lowercased()
@@ -481,7 +583,7 @@ public final class CatalogStore: ObservableObject {
                     titleLower.contains(term) || tagsLower.contains(term)
                 }
                 if matchesAllTerms {
-                    matches.append(item)
+                    matches.append(enrichItem(item))
                 }
             }
             if matches.count >= limit { break }
@@ -491,7 +593,7 @@ public final class CatalogStore: ObservableObject {
     
     public func findItem(by id: String) -> MediaItem? {
         if let found = allItems.first(where: { $0.id == id }) {
-            return found
+            return enrichItem(found)
         }
         for row in curatedRows {
             if let found = row.items.first(where: { $0.id == id }) {

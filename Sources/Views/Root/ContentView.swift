@@ -77,8 +77,13 @@ public struct ContentView: View {
                         activeDetailItem = nil
                     },
                     onPlay: { mediaItem, seasonNum, episode in
+                        #if canImport(UIKit)
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        #endif
                         activeDetailItem = nil
-                        DedicatedPlayerManager.shared.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            DedicatedPlayerManager.shared.play(item: mediaItem, seasonNumber: seasonNum, episode: episode)
+                        }
                     }
                 )
             }

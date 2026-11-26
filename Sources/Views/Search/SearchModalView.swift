@@ -8,10 +8,18 @@ public struct SearchModalView: View {
     @State private var searchText: String = ""
     @State private var selectedFilter: String = "All"
     @State private var searchResults: [MediaItem] = []
+    @FocusState private var isSearchFieldFocused: Bool
     
     public init(onClose: @escaping () -> Void, onSelectItem: @escaping (MediaItem) -> Void) {
         self.onClose = onClose
         self.onSelectItem = onSelectItem
+    }
+    
+    private func dismissKeyboard() {
+        isSearchFieldFocused = false
+        #if canImport(UIKit)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
     }
     
     private let filterOptions = ["All", "Movies", "TV Series", "Anime", "1080p"]
@@ -48,6 +56,11 @@ public struct SearchModalView: View {
                             .foregroundColor(.white)
                             .font(.system(size: 14))
                             .autocorrectionDisabled()
+                            .focused($isSearchFieldFocused)
+                            .submitLabel(.search)
+                            .onSubmit {
+                                dismissKeyboard()
+                            }
                             .onChange(of: searchText) { _ in
                                 executeSearch()
                             }
@@ -67,9 +80,12 @@ public struct SearchModalView: View {
                     .background(Color(hex: "262626"))
                     .cornerRadius(6)
                     
-                    Button("Cancel", action: onClose)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                    Button("Cancel") {
+                        dismissKeyboard()
+                        onClose()
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, max(56, proxy.safeAreaInsets.top + 10))
@@ -109,6 +125,11 @@ public struct SearchModalView: View {
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(HomeFlixTheme.textSecondary)
                         }
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            dismissKeyboard()
+                        }
                     } else {
                         let cardWidth = (proxy.size.width - 48) / 3
                         LazyVGrid(columns: columns, spacing: 10) {
@@ -117,7 +138,10 @@ public struct SearchModalView: View {
                                     item: item,
                                     width: cardWidth,
                                     isLandscape: false,
-                                    onSelect: onSelectItem
+                                    onSelect: { selected in
+                                        dismissKeyboard()
+                                        onSelectItem(selected)
+                                    }
                                 )
                             }
                         }
@@ -125,6 +149,12 @@ public struct SearchModalView: View {
                         .padding(.vertical, 10)
                     }
                 }
+                .scrollDismissesKeyboard(.immediately)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        dismissKeyboard()
+                    }
+                )
             }
         }
         .background(HomeFlixTheme.background.edgesIgnoringSafeArea(.all))
